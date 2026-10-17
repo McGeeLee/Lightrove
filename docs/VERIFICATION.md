@@ -4,6 +4,7 @@
 
 ## Release 签名与工作流
 
+- GitHub 首次端到端运行 [39022280469](https://github.com/McGeeLee/Lightrove/actions/runs/39022280469) 已成功：标签校验、云端测试与 lint、签名构建及验签、Release 草稿生成四个任务均通过。`v0.2.0` 草稿含 APK、AAB 和 SHA256SUMS，尚未正式发布。
 - 本地 Debug JVM 单元测试 34 项通过；签名 Release APK 与 AAB 构建成功。
 - APK 经 apksigner 验证，AAB 经 jarsigner 严格验证，两者证书 SHA-256 均与仓库公钥一致：`69bebcec726f3864e0be9619dd0cc4b94f8f4ce3ef647615269ffb1fb686c3c7`。
 - 签名参数不完整时，Debug 任务图仍可配置；Release 签名检查和强制签名构建均按预期失败，没有退回未签名产物。

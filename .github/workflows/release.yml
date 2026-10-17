@@ -1,0 +1,192 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag, for example v0.2.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  ANDROID_PLATFORM: "platforms;android-37.1"
+  ANDROID_BUILD_TOOLS: "37.0.0"
+
+jobs:
+  validate:
+    name: Validate release tag
+    # A manual run must use the default branch's workflow, not an arbitrary branch.
+    if: github.event_name == 'push' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.metadata.outputs.tag }}
+      version: ${{ steps.metadata.outputs.version }}
+      version_code: ${{ steps.metadata.outputs.version_code }}
+      commit: ${{ steps.metadata.outputs.commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require an existing tag on the default branch
+        id: metadata
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SHA: ${{ github.sha }}
+        run: python3 scripts/ci-release.py metadata
+
+  verify:
+    name: Tests and lint
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate.outputs.commit }}
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "25"
+          verify-signature: true
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+      - name: Install Android SDK
+        run: bash scripts/ci-android-sdk.sh
+      - name: Check release helpers, unit tests, and lint
+        run: |
+          python3 -m unittest discover -s scripts/tests -p 'test_ci_release.py'
+          bash ./gradlew --no-daemon --no-configuration-cache --console=plain \
+            :app:testDebugUnitTest :app:lintDebug
+      - name: Save verification reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verification-${{ needs.validate.outputs.tag }}
+          path: |
+            app/build/reports/tests/testDebugUnitTest/
+            app/build/reports/lint-results-debug.*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  sign:
+    name: Build and verify signed APK and AAB
+    needs: [validate, verify]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate.outputs.commit }}
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "25"
+          verify-signature: true
+          cache-jdk: false
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          # No build state containing signing inputs is restored or uploaded.
+          cache-disabled: true
+      - name: Install Android SDK
+        run: bash scripts/ci-android-sdk.sh
+      - name: Restore key, sign, and verify release files
+        env:
+          LIGHTROVE_KEYSTORE_BASE64: ${{ secrets.LIGHTROVE_KEYSTORE_BASE64 }}
+          LIGHTROVE_KEYSTORE_PASSWORD: ${{ secrets.LIGHTROVE_KEYSTORE_PASSWORD }}
+          LIGHTROVE_KEY_ALIAS: ${{ secrets.LIGHTROVE_KEY_ALIAS }}
+          LIGHTROVE_KEY_PASSWORD: ${{ secrets.LIGHTROVE_KEY_PASSWORD }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+          RELEASE_VERSION_CODE: ${{ needs.validate.outputs.version_code }}
+        run: |
+          set -euo pipefail
+          umask 077
+          export LIGHTROVE_KEYSTORE_PATH="$RUNNER_TEMP/lightrove-release.jks"
+          trap 'rm -f -- "$LIGHTROVE_KEYSTORE_PATH"' EXIT
+          python3 scripts/ci-release.py restore-key
+          unset LIGHTROVE_KEYSTORE_BASE64
+          bash ./gradlew --no-daemon --no-configuration-cache --no-build-cache --console=plain \
+            -PrequireReleaseSigning=true \
+            -Pandroid.injected.invoked.from.ide=false -Pandroid.injected.testOnly=false \
+            :app:assembleRelease :app:bundleRelease
+          python3 scripts/ci-release.py stage
+      - name: Remove signing key
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/lightrove-release.jks"
+      - name: Save verified release files
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-${{ needs.validate.outputs.tag }}
+          path: release-artifacts/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  publish:
+    name: Prepare GitHub Release draft
+    needs: [validate, sign]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.sign.outputs.artifact_id }}
+          path: release-artifacts
+          merge-multiple: true
+          digest-mismatch: error
+      - name: Create or update draft without replacing a published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+          RELEASE_COMMIT: ${{ needs.validate.outputs.commit }}
+        run: |
+          set -euo pipefail
+          cd release-artifacts
+          sha256sum --check SHA256SUMS
+          remote_commit="$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq .sha)"
+          if [[ "$remote_commit" != "$RELEASE_COMMIT" ]]; then
+            echo 'Release tag changed after validation; refusing to publish.' >&2
+            exit 1
+          fi
+          files=("lightrove-$RELEASE_VERSION.apk" "lightrove-$RELEASE_VERSION.aab" SHA256SUMS)
+          if release_state="$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft 2>/dev/null)"; then
+            if [[ "$release_state" != true ]]; then
+              echo 'This release is already published; its assets will not be overwritten.' >&2
+              exit 1
+            fi
+            gh release upload "$RELEASE_TAG" "${files[@]}" --clobber
+          else
+            flags=(--draft --verify-tag --generate-notes --title "Lightrove $RELEASE_VERSION")
+            if [[ "$RELEASE_VERSION" == *-* ]]; then flags+=(--prerelease); fi
+            gh release create "$RELEASE_TAG" "${files[@]}" "${flags[@]}"
+          fi
+          release_url="$(gh release view "$RELEASE_TAG" --json url --jq .url)"
+          printf '### Lightrove %s\n\nSigned APK, AAB, and checksums are ready in the [release draft](%s).\n' \
+            "$RELEASE_VERSION" "$release_url" >> "$GITHUB_STEP_SUMMARY"

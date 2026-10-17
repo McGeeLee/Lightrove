@@ -47,6 +47,9 @@
     <string name="ui_index_start">整理を開始</string>
     <string name="ui_match_timestamp">%1$s で一致</string>
     <string name="ui_settings_title">設定</string>
+    <string name="ui_video_ocr_title">動画の文字認識</string>
+    <string name="ui_video_ocr_hint">次回のインデックス作成から適用されます。オフにすると処理時間と保存容量を減らせます。</string>
+    <string name="ui_video_ocr_save_failed">動画の文字認識の設定を保存できませんでした。</string>
     <string name="ui_privacy_body">写真や動画と検索インデックスは端末内に保存します。</string>
     <string name="ui_model_name">EmbeddingGemma 2</string>
     <string name="ui_model_missing_title">風景と音の検索を追加</string>

@@ -30,10 +30,10 @@ class VectorMathTest {
         assertEquals(0f, VectorMath.cosine(floatArrayOf(1f, 0f), floatArrayOf(0f, 1f))!!, .00001f)
     }
 
-    @Test fun persistedVectorsRoundTripWithoutLosingPrecision() {
+    @Test fun persistedVectorsRoundTripWithinQuantizationError() {
         val converter = IndexConverters()
         val input = floatArrayOf(.12345678f, -4f, 0f, Float.MIN_VALUE)
-        assertArrayEquals(input, converter.decodeVector(converter.encodeVector(input)), 0f)
+        assertArrayEquals(input, converter.decodeVector(converter.encodeVector(input)), 4f / 254)
         assertNull(converter.decodeVector(byteArrayOf(1, 2, 3)))
         assertNull(converter.decodeVector(null))
     }

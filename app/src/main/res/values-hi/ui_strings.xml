@@ -47,6 +47,9 @@
     <string name="ui_index_start">इंडेक्सिंग शुरू करें</string>
     <string name="ui_match_timestamp">%1$s पर मिलान</string>
     <string name="ui_settings_title">सेटिंग</string>
+    <string name="ui_video_ocr_title">वीडियो में टेक्स्ट पहचानें</string>
+    <string name="ui_video_ocr_hint">अगली इंडेक्सिंग से लागू होगा। बंद करने पर प्रोसेसिंग का समय और स्टोरेज कम लगेगा।</string>
+    <string name="ui_video_ocr_save_failed">वीडियो में टेक्स्ट पहचानने की सेटिंग सेव नहीं हो सकी।</string>
     <string name="ui_privacy_body">फ़ोटो, वीडियो और खोज इंडेक्स इसी डिवाइस पर रहते हैं।</string>
     <string name="ui_model_name">EmbeddingGemma 2</string>
     <string name="ui_model_missing_title">दृश्य और आवाज़ की खोज जोड़ें</string>

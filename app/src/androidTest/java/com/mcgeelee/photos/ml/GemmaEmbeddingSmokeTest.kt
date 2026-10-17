@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.mcgeelee.photos.data.IndexConverters
+import com.mcgeelee.photos.data.VectorMath
 import java.io.File
 import kotlin.math.PI
 import kotlin.math.sin
@@ -35,6 +37,8 @@ class GemmaEmbeddingSmokeTest {
         try {
             val sunset = engine.embedDocument("A photograph of a beautiful sunset at the beach, with orange sunlight reflecting on the ocean waves.")
             val receipt = engine.embedDocument("A grocery store receipt listing the prices of milk, bread, eggs and vegetables, with a total payment amount.")
+            val storedSunset = storedVector("sunset document", sunset)
+            val storedReceipt = storedVector("receipt document", receipt)
             val queries = mapOf(
                 "en" to "sunset at the beach",
                 "zh-CN" to "海边的日落",
@@ -45,11 +49,19 @@ class GemmaEmbeddingSmokeTest {
             )
             queries.forEach { (language, text) ->
                 val query = engine.embedQuery(text)
-                // These are L2-normalized real model vectors, so the dot product is cosine similarity.
-                val matchingScore = query.indices.sumOf { query[it].toDouble() * sunset[it] }
-                val unrelatedScore = query.indices.sumOf { query[it].toDouble() * receipt[it] }
+                // Quantization need not preserve unit length, so exercise the search cosine path.
+                val matchingScore = checkNotNull(VectorMath.cosine(query, sunset))
+                val unrelatedScore = checkNotNull(VectorMath.cosine(query, receipt))
+                val storedMatchingScore = checkNotNull(VectorMath.cosine(query, storedSunset))
+                val storedUnrelatedScore = checkNotNull(VectorMath.cosine(query, storedReceipt))
                 assertTrue("$language should rank the English sunset document above the receipt: $matchingScore <= $unrelatedScore",
                     matchingScore > unrelatedScore)
+                assertTrue("$language should retain the same ranking after storage: $storedMatchingScore <= $storedUnrelatedScore",
+                    storedMatchingScore > storedUnrelatedScore)
+                assertEquals("$language sunset query score after storage", matchingScore.toDouble(),
+                    storedMatchingScore.toDouble(), 0.002)
+                assertEquals("$language receipt query score after storage", unrelatedScore.toDouble(),
+                    storedUnrelatedScore.toDouble(), 0.002)
             }
         } finally {
             engine.close()
@@ -73,16 +85,33 @@ class GemmaEmbeddingSmokeTest {
             val image = engine.embedImage(bitmap)
             val tone = FloatArray(16_000) { (sin(2 * PI * 440 * it / 16_000) * 0.2).toFloat() }
             val audio = engine.embedAudio(tone)
-            listOf(query, repeated, document, image, audio).forEach { vector ->
+            listOf("query" to query, "repeated query" to repeated, "document" to document,
+                "image" to image, "audio" to audio).forEach { (modality, vector) ->
                 assertEquals(768, vector.size)
                 assertTrue(vector.all { it.isFinite() })
                 assertEquals(1.0, sqrt(vector.sumOf { it.toDouble() * it }), 0.001)
+                val stored = storedVector(modality, vector)
+                assertEquals("$modality query score after storage",
+                    checkNotNull(VectorMath.cosine(query, vector)).toDouble(),
+                    checkNotNull(VectorMath.cosine(query, stored)).toDouble(), 0.002)
             }
-            val similarity = query.indices.sumOf { query[it].toDouble() * repeated[it] }
+            val similarity = checkNotNull(VectorMath.cosine(query, repeated))
             assertTrue("Repeated text should produce the same embedding", similarity > 0.999)
         } finally {
             bitmap.recycle()
             engine.close()
         }
+    }
+
+    private fun storedVector(label: String, vector: FloatArray): FloatArray {
+        // Use the actual Room converter; both tests reuse inference results already computed above.
+        val converters = IndexConverters()
+        val bytes = checkNotNull(converters.encodeVector(vector)) { "$label could not be encoded" }
+        assertTrue("$label should occupy fewer bytes than float32", bytes.size < vector.size * Float.SIZE_BYTES)
+        val restored = checkNotNull(converters.decodeVector(bytes)) { "$label could not be decoded" }
+        assertEquals("$label stored dimensions", vector.size, restored.size)
+        val similarity = checkNotNull(VectorMath.cosine(vector, restored))
+        assertTrue("$label should retain its direction after storage: cosine=$similarity", similarity > 0.999)
+        return restored
     }
 }

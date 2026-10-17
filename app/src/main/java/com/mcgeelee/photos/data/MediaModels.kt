@@ -1,6 +1,7 @@
 package com.mcgeelee.photos.data
 
 import androidx.room.Entity
+import androidx.room.ColumnInfo
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -64,6 +65,8 @@ data class IndexRecord(
     val error: String? = null,
     /** Tracks the embedding implementation so a model change can trigger reindexing. */
     val modelId: String = "",
+    /** Historical indexes ran video OCR; new work records the setting captured when it starts. */
+    @ColumnInfo(defaultValue = "1") val videoOcrEnabled: Boolean = true,
 )
 
 enum class MediaAccess { NONE, LIMITED, FULL }

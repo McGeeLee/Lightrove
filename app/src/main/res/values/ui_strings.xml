@@ -47,6 +47,9 @@
     <string name="ui_index_start">Start indexing</string>
     <string name="ui_match_timestamp">Match at %1$s</string>
     <string name="ui_settings_title">Settings</string>
+    <string name="ui_video_ocr_title">Video text recognition</string>
+    <string name="ui_video_ocr_hint">Applies to the next indexing run. Turn off to reduce processing time and storage.</string>
+    <string name="ui_video_ocr_save_failed">Could not save the video text recognition setting.</string>
     <string name="ui_privacy_body">Your library and search index stay on this device.</string>
     <string name="ui_model_name">EmbeddingGemma 2</string>
     <string name="ui_model_missing_title">Add scene and sound search</string>

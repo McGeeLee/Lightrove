@@ -47,6 +47,9 @@
     <string name="ui_index_start">정리 시작</string>
     <string name="ui_match_timestamp">%1$s에서 일치</string>
     <string name="ui_settings_title">설정</string>
+    <string name="ui_video_ocr_title">동영상 텍스트 인식</string>
+    <string name="ui_video_ocr_hint">다음 색인 작업부터 적용됩니다. 끄면 처리 시간과 저장 공간을 줄일 수 있습니다.</string>
+    <string name="ui_video_ocr_save_failed">동영상 텍스트 인식 설정을 저장하지 못했습니다.</string>
     <string name="ui_privacy_body">사진, 동영상, 검색 색인은 기기에만 저장됩니다.</string>
     <string name="ui_model_name">EmbeddingGemma 2</string>
     <string name="ui_model_missing_title">장면과 소리 검색 추가</string>

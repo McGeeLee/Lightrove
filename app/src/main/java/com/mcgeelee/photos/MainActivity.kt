@@ -95,6 +95,7 @@ class MainActivity : AppCompatActivity() {
                         else model.startIndexing()
                     },
                     cancelIndexing = model::cancelIndexing,
+                    videoOcrChanged = model::setVideoOcrEnabled,
                     downloadModel = model::downloadModel,
                     importModel = { import.launch(arrayOf("*/*")) },
                     cancelModelDownload = model::cancelModelDownload,

@@ -30,6 +30,7 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
         !completed || requested
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     private var onboardingJob: Job? = null
+    private var indexingPreferenceJob: Job? = null
     private var assets = emptyList<MediaAsset>()
     private var queryVector: FloatArray? = null
     private var searchJob: Job? = null
@@ -51,10 +52,16 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
 
     init {
         viewModelScope.launch {
+            graph.indexingPreferences.videoOcrEnabled.collect { enabled ->
+                mutableState.update { it.copy(videoOcrEnabled = enabled) }
+                updateIndexedCount()
+            }
+        }
+        viewModelScope.launch {
             graph.dao.observeAssets().collect { media ->
                 assets = media
                 if (permissionChecked) mutableState.update { it.copy(media = media.map { it.toPhoto() }, totalCount = media.size) }
-                search(debounce = false)
+                if (!state.value.isIndexing) search(debounce = false)
             }
         }
         viewModelScope.launch {
@@ -63,6 +70,16 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
                 updateIndexedCount()
                 if (!state.value.isIndexing) search(debounce = false)
             }
+        }
+        viewModelScope.launch {
+            // Vector-only commits need to refresh results too. Observe table invalidation instead
+            // of loading every vector twice, and coalesce the stream while indexing is busy.
+            graph.database.invalidationTracker.createFlow("indexed_segments", emitInitialState = false)
+                .conflate().collect {
+                    delay(1_000)
+                    // A refresh must not repeatedly cancel an initial, slower native query.
+                    if (searchJob?.isActive != true) search(debounce = false)
+                }
         }
         viewModelScope.launch {
             graph.models.status.collect { model ->
@@ -159,6 +176,17 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
     }
     fun cancelIndexing() { LibraryIndexWorker.cancel(getApplication()) }
 
+    fun setVideoOcrEnabled(enabled: Boolean) {
+        if (indexingPreferenceJob?.isActive == true) return
+        indexingPreferenceJob = viewModelScope.launch {
+            mutableState.update { it.copy(isSavingVideoOcrPreference = true) }
+            try { graph.indexingPreferences.setVideoOcrEnabled(enabled) }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { showError(R.string.ui_video_ocr_save_failed) }
+            finally { mutableState.update { it.copy(isSavingVideoOcrPreference = false) } }
+        }
+    }
+
     fun downloadModel() { installModel { graph.models.downloadOfficial() } }
     fun importModel(uri: Uri) { installModel { graph.models.importModel(uri) } }
     fun cancelModelDownload() { modelJob?.cancel() }
@@ -220,7 +248,7 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
             try {
                 if (debounce) delay(300)
                 if (state.value.query.isNotBlank()) {
-                    queryVector = if (graph.models.modelReady) graph.engine.embedQuery(state.value.query) else null
+                    queryVector = if (graph.models.modelReady) queryVector ?: graph.engine.embedQuery(state.value.query) else null
                 }
                 performSearch()
             } catch (cancelled: CancellationException) { throw cancelled }
@@ -299,6 +327,8 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
         if (active != null) observedWorkId = active.id
         val latest = lastWork.firstOrNull { it.id == observedWorkId }
         val message = when {
+            // A system interruption can leave the previous running message in progress data.
+            active?.state == WorkInfo.State.ENQUEUED -> runtimeText(RuntimeMessage.INDEX_WAITING).render(localizedContext)
             active != null && active.progress.getString("message") != null -> {
                 val progress = RuntimeText.decode(active.progress.getString("message"))
                     ?: runtimeText(RuntimeMessage.INDEX_PREPARING)
@@ -308,7 +338,6 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
                         runtimeText(RuntimeMessage.INDEX_RETRY_COUNT, failed).render(localizedContext)).render(localizedContext)
                 } else progress.render(localizedContext)
             }
-            active?.state == WorkInfo.State.ENQUEUED -> runtimeText(RuntimeMessage.INDEX_WAITING).render(localizedContext)
             active != null -> runtimeText(RuntimeMessage.INDEX_PREPARING).render(localizedContext)
             latest?.state == WorkInfo.State.FAILED -> RuntimeText.renderStored(latest.outputData.getString("error"), localizedContext, RuntimeMessage.INDEX_FAILED)
             latest?.state == WorkInfo.State.CANCELLED -> runtimeText(RuntimeMessage.INDEX_CANCELLED).render(localizedContext)
@@ -325,7 +354,11 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
     private fun updateIndexedCount() {
         if (!permissionChecked) return
         val modelId = if (graph.models.modelReady) ModelManager.MODEL_ID else LibraryIndexWorker.OCR_MODEL_ID
-        mutableState.update { it.copy(indexedCount = records.count { record -> record.state == IndexState.READY && record.modelId == modelId }) }
+        val videoUris = assets.asSequence().filter { it.isVideo }.map { it.uri }.toHashSet()
+        mutableState.update { state -> state.copy(indexedCount = records.count { record ->
+            record.state == IndexState.READY && record.modelId == modelId &&
+                (record.assetUri !in videoUris || record.videoOcrEnabled == state.videoOcrEnabled)
+        }) }
     }
 
     private fun MediaAsset.toPhoto() = PhotoItem(uri, uri, name, isVideo, durationMs, ocrText = ocrText)

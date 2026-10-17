@@ -10,28 +10,30 @@ import androidx.room.Transaction
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.Upsert
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 
 class IndexConverters {
-    @TypeConverter fun encodeVector(value: FloatArray?): ByteArray? = value?.let {
-        ByteBuffer.allocate(it.size * Float.SIZE_BYTES).order(ByteOrder.LITTLE_ENDIAN).apply {
-            it.forEach(::putFloat)
-        }.array()
-    }
-
-    @TypeConverter fun decodeVector(value: ByteArray?): FloatArray? {
-        if (value == null || value.isEmpty() || value.size % Float.SIZE_BYTES != 0) return null
-        val buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN)
-        return FloatArray(value.size / Float.SIZE_BYTES) { buffer.float }
-    }
+    @TypeConverter fun encodeVector(value: FloatArray?): ByteArray? = VectorStorage.encode(value)
+    @TypeConverter fun decodeVector(value: ByteArray?): FloatArray? = VectorStorage.decode(value)
 
     @TypeConverter fun encodeModality(value: IndexModality): String = value.name
     @TypeConverter fun decodeModality(value: String): IndexModality = IndexModality.valueOf(value)
     @TypeConverter fun encodeState(value: IndexState): String = value.name
     @TypeConverter fun decodeState(value: String): IndexState = IndexState.valueOf(value)
 }
+
+/** A consistent view of the library with already completed items excluded from the work queue. */
+data class IndexPlan(val total: Int, val ready: Int, val pending: List<MediaAsset>)
+
+/** Previous results belong to the exact source and model claimed by the worker. */
+data class IndexClaim(val previous: IndexRecord?, val segments: List<IndexedSegment>)
+
+data class StoredVector(val rowId: Long, val vector: ByteArray)
+data class VectorCompactionBatch(val lastRowId: Long, val count: Int, val bytesSaved: Long)
 
 @Dao
 abstract class PhotoDao {
@@ -46,6 +48,19 @@ abstract class PhotoDao {
 
     @Query("SELECT * FROM media_assets ORDER BY dateTaken DESC, dateModified DESC")
     abstract suspend fun assets(): List<MediaAsset>
+
+    @Query("SELECT COUNT(*) FROM media_assets")
+    protected abstract suspend fun assetCount(): Int
+
+    @Query("""
+        SELECT media_assets.* FROM media_assets
+        LEFT JOIN index_records ON index_records.assetUri = media_assets.uri
+        WHERE index_records.assetUri IS NULL OR index_records.state != 'READY'
+            OR index_records.sourceModified != media_assets.dateModified OR index_records.modelId != :modelId
+            OR (media_assets.isVideo = 1 AND index_records.videoOcrEnabled != :videoOcrEnabled)
+        ORDER BY media_assets.dateTaken DESC, media_assets.dateModified DESC
+    """)
+    protected abstract suspend fun pendingAssets(modelId: String, videoOcrEnabled: Boolean): List<MediaAsset>
 
     @Query("SELECT * FROM media_assets WHERE uri = :uri")
     abstract suspend fun asset(uri: String): MediaAsset?
@@ -69,7 +84,7 @@ abstract class PhotoDao {
     @Upsert abstract suspend fun upsertSegments(segments: List<IndexedSegment>)
     @Upsert abstract suspend fun upsertIndexRecord(record: IndexRecord)
 
-    @Query("UPDATE media_assets SET ocrText = :text WHERE uri = :uri")
+    @Query("UPDATE media_assets SET ocrText = :text WHERE uri = :uri AND ocrText != :text")
     abstract suspend fun setOcrText(uri: String, text: String)
 
     @Query("DELETE FROM media_assets WHERE uri IN (:uris)")
@@ -78,11 +93,79 @@ abstract class PhotoDao {
     @Query("DELETE FROM indexed_segments WHERE assetUri = :uri")
     abstract suspend fun deleteSegments(uri: String)
 
+    @Query("DELETE FROM indexed_segments WHERE assetUri = :uri AND modelId != :modelId")
+    protected abstract suspend fun deleteOtherModelSegments(uri: String, modelId: String)
+
+    @Query("DELETE FROM indexed_segments WHERE assetUri = :uri AND modality = :modality AND timestampMs = :timestampMs")
+    protected abstract suspend fun deleteSegment(uri: String, modality: IndexModality, timestampMs: Long)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM indexed_segments WHERE vector IS NOT NULL AND substr(vector, 1, 4) != :magic)")
+    abstract suspend fun hasLegacyVectors(magic: ByteArray): Boolean
+
+    @Query("""
+        SELECT rowid AS rowId, vector FROM indexed_segments
+        WHERE rowid > :afterRowId AND vector IS NOT NULL AND substr(vector, 1, 4) != :magic
+        ORDER BY rowid LIMIT :limit
+    """)
+    protected abstract suspend fun legacyVectors(afterRowId: Long, magic: ByteArray, limit: Int): List<StoredVector>
+
+    @Query("UPDATE indexed_segments SET vector = :replacement WHERE rowid = :rowId AND vector = :previous")
+    protected abstract suspend fun replaceStoredVector(rowId: Long, previous: ByteArray, replacement: ByteArray?): Int
+
+    /** Keyset pagination bounds each transaction and avoids rescanning already converted rows. */
+    @Transaction
+    open suspend fun compactVectorBatch(afterRowId: Long, limit: Int = 64): VectorCompactionBatch {
+        require(limit in 1..256)
+        val rows = legacyVectors(afterRowId, VectorStorage.magicBytes, limit)
+        var saved = 0L
+        for (row in rows) {
+            currentCoroutineContext().ensureActive()
+            val packed = VectorStorage.encode(VectorStorage.decode(row.vector))
+            if (replaceStoredVector(row.rowId, row.vector, packed) > 0) saved += row.vector.size - (packed?.size ?: 0)
+        }
+        return VectorCompactionBatch(rows.lastOrNull()?.rowId ?: afterRowId, rows.size, saved)
+    }
+
     @Query("DELETE FROM index_records WHERE assetUri = :uri")
     abstract suspend fun deleteIndexRecord(uri: String)
 
     @Query("DELETE FROM media_assets")
     abstract suspend fun clearLibrary()
+
+    @Transaction
+    open suspend fun indexingPlan(modelId: String, videoOcrEnabled: Boolean = true): IndexPlan {
+        val total = assetCount()
+        val pending = pendingAssets(modelId, videoOcrEnabled)
+        return IndexPlan(total, total - pending.size, pending)
+    }
+
+    /** Revalidate a queued source before touching its progress or reusing earlier results. */
+    @Transaction
+    open suspend fun claimIndex(source: MediaAsset, modelId: String, videoOcrEnabled: Boolean = true): IndexClaim? {
+        val current = asset(source.uri) ?: return null
+        if (!current.sameSourceAs(source)) return null
+        val previous = indexRecord(source.uri)
+        val sameSource = previous?.sourceModified == source.dateModified
+        val reusable = sameSource && previous?.modelId == modelId
+        if (reusable && previous?.state == IndexState.READY &&
+            (!source.isVideo || previous.videoOcrEnabled == videoOcrEnabled)) return null
+        val retaggedText = mutableListOf<IndexedSegment>()
+        val retained = if (sameSource) segments(source.uri).mapNotNull { segment ->
+            when {
+                reusable && segment.modelId == modelId -> segment
+                segment.modality == IndexModality.TEXT && segment.text.isNotBlank() -> {
+                    // OCR is still useful while switching models; its old semantic vector is not.
+                    segment.copy(vector = null, modelId = modelId).also(retaggedText::add)
+                }
+                else -> null
+            }
+        } else emptyList()
+        // Commit these with the claim so even cancellation before the first checkpoint keeps OCR.
+        upsertSegments(retaggedText)
+        upsertIndexRecord(IndexRecord(source.uri, IndexState.PROCESSING, source.dateModified, modelId = modelId,
+            videoOcrEnabled = videoOcrEnabled))
+        return IndexClaim(previous, retained)
+    }
 
     @Transaction
     open suspend fun replaceSegments(uri: String, segments: List<IndexedSegment>) {
@@ -102,17 +185,49 @@ abstract class PhotoDao {
         val previous = assets().associateBy(MediaAsset::uri)
         val currentUris = snapshot.assets.mapTo(HashSet(), MediaAsset::uri)
         (previous.keys - currentUris).chunked(400).forEach { deleteAssets(it) }
-        val merged = snapshot.assets.map { fresh ->
+        val changed = snapshot.assets.mapNotNull { fresh ->
             val old = previous[fresh.uri]
-            if (old != null && old.sameSourceAs(fresh)) {
-                fresh.copy(ocrText = old.ocrText)
-            } else {
-                deleteSegments(fresh.uri)
-                deleteIndexRecord(fresh.uri)
-                fresh
+            val merged = when {
+                old == null -> fresh
+                old.sameSourceAs(fresh) -> fresh.copy(ocrText = old.ocrText)
+                else -> {
+                    deleteSegments(fresh.uri)
+                    deleteIndexRecord(fresh.uri)
+                    fresh
+                }
             }
+            merged.takeIf { it != old }
         }
-        merged.chunked(400).forEach { upsertAssets(it) }
+        changed.chunked(400).forEach { upsertAssets(it) }
+    }
+
+    /** Save resumable results without claiming that every modality has completed. */
+    @Transaction
+    open suspend fun checkpointIndex(
+        source: MediaAsset,
+        segments: List<IndexedSegment>,
+        modelId: String,
+        state: IndexState = IndexState.PROCESSING,
+        changedSegments: List<IndexedSegment> = segments,
+        removedKeys: List<Pair<IndexModality, Long>> = emptyList(),
+        videoOcrEnabled: Boolean = true,
+    ): Boolean {
+        require(state == IndexState.PROCESSING || state == IndexState.PENDING)
+        val current = asset(source.uri) ?: return false
+        if (!current.sameSourceAs(source)) return false
+        val record = indexRecord(source.uri) ?: return false
+        if (record.state != IndexState.PROCESSING || record.sourceModified != source.dateModified || record.modelId != modelId) return false
+        if (source.isVideo && record.videoOcrEnabled != videoOcrEnabled) return false
+        require(segments.all { it.assetUri == source.uri && it.modelId == modelId })
+        require(changedSegments.all { it.assetUri == source.uri && it.modelId == modelId })
+        val keys = segments.mapTo(HashSet()) { it.modality to it.timestampMs }
+        require(changedSegments.all { (it.modality to it.timestampMs) in keys } && removedKeys.none { it in keys })
+        deleteOtherModelSegments(source.uri, modelId)
+        removedKeys.forEach { (modality, time) -> deleteSegment(source.uri, modality, time) }
+        upsertSegments(changedSegments)
+        setOcrText(source.uri, segments.ocrText())
+        upsertIndexRecord(record.copy(state = state, updatedAt = System.currentTimeMillis(), error = null))
+        return true
     }
 
     /** Commits an item's result atomically, and rejects work for a deleted/revoked item. */
@@ -121,32 +236,39 @@ abstract class PhotoDao {
         source: MediaAsset,
         segments: List<IndexedSegment>,
         modelId: String = "",
+        videoOcrEnabled: Boolean = true,
     ): Boolean {
         val current = asset(source.uri) ?: return false
         if (!current.sameSourceAs(source)) return false
+        if (source.isVideo && indexRecord(source.uri)?.let { it.videoOcrEnabled != videoOcrEnabled } == true) return false
         require(segments.all { it.assetUri == source.uri })
         deleteSegments(source.uri)
         upsertSegments(segments)
-        setOcrText(source.uri, segments.filter { it.modality == IndexModality.TEXT }
-            .map { it.text }.filter(String::isNotBlank).distinct().joinToString("\n"))
+        setOcrText(source.uri, segments.ocrText())
         upsertIndexRecord(IndexRecord(
             assetUri = source.uri,
             state = IndexState.READY,
             sourceModified = source.dateModified,
             modelId = modelId,
+            videoOcrEnabled = videoOcrEnabled,
         ))
         return true
     }
 }
 
-private fun MediaAsset.sameSourceAs(other: MediaAsset): Boolean =
-    dateModified == other.dateModified && durationMs == other.durationMs &&
+internal fun MediaAsset.sameSourceAs(other: MediaAsset): Boolean =
+    uri == other.uri && isVideo == other.isVideo &&
+        dateModified == other.dateModified && durationMs == other.durationMs &&
         width == other.width && height == other.height && mimeType == other.mimeType &&
         name == other.name && sizeBytes == other.sizeBytes
 
+private fun List<IndexedSegment>.ocrText(): String = asSequence()
+    .filter { it.modality == IndexModality.TEXT }.map { it.text }
+    .filter(String::isNotBlank).distinct().joinToString("\n")
+
 @Database(
     entities = [MediaAsset::class, IndexedSegment::class, IndexRecord::class],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(IndexConverters::class)
@@ -156,12 +278,18 @@ abstract class PhotoDatabase : RoomDatabase() {
     companion object {
         @Volatile private var instance: PhotoDatabase? = null
 
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE index_records ADD COLUMN videoOcrEnabled INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+
         fun create(context: Context): PhotoDatabase = instance ?: synchronized(this) {
             instance ?: Room.databaseBuilder(
                 context.applicationContext,
                 PhotoDatabase::class.java,
                 "photos-index.db",
-            ).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2).build().also { instance = it }
         }
     }
 }

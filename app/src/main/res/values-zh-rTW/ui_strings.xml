@@ -47,6 +47,9 @@
     <string name="ui_index_start">開始整理</string>
     <string name="ui_match_timestamp">%1$s 相符</string>
     <string name="ui_settings_title">設定</string>
+    <string name="ui_video_ocr_title">影片文字辨識</string>
+    <string name="ui_video_ocr_hint">下次建立索引時生效。關閉可減少處理時間與儲存空間用量。</string>
+    <string name="ui_video_ocr_save_failed">無法儲存影片文字辨識設定。</string>
     <string name="ui_privacy_body">圖庫與搜尋索引僅儲存在本機。</string>
     <string name="ui_model_name">EmbeddingGemma 2</string>
     <string name="ui_model_missing_title">加入畫面與聲音搜尋</string>

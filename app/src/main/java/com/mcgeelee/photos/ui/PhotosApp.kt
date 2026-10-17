@@ -40,6 +40,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.AddPhotoAlternate
@@ -83,6 +84,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -104,6 +106,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -568,6 +572,7 @@ private fun SettingsScreen(state: PhotosUiState, actions: PhotosActions) {
             }
         }
         item { AccessSettings(actions) }
+        item { VideoOcrSettings(state, actions.videoOcrChanged) }
         item { ModelCard(state, actions) }
         state.error?.let { error -> item { ErrorCard(error, actions.retry, actions.clearError) } }
         item { IndexCard(state, actions) }
@@ -626,6 +631,26 @@ private fun AccessSettings(actions: PhotosActions) {
                     Text(stringResource(R.string.ui_open_system_settings))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun VideoOcrSettings(state: PhotosUiState, onChanged: (Boolean) -> Unit) {
+    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+        // The whole card is one labelled switch; the visual control has no separate action/focus.
+        Column(Modifier.fillMaxWidth().testTag("video_ocr_setting")
+            .toggleable(value = state.videoOcrEnabled, enabled = !state.isSavingVideoOcrPreference,
+                role = Role.Switch, onValueChange = onChanged)
+            .padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.ui_video_ocr_title), Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium)
+                Switch(checked = state.videoOcrEnabled, onCheckedChange = null,
+                    enabled = !state.isSavingVideoOcrPreference, modifier = Modifier.clearAndSetSemantics {})
+            }
+            Text(stringResource(R.string.ui_video_ocr_hint), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

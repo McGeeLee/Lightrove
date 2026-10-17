@@ -1,0 +1,8 @@
+Date: 2026-10-17 (Asia/Singapore)
+Android API 37 arm64-v8a emulator, real EmbeddingGemma 2 model installed
+JVM: {'tests': 43, 'failures': 0, 'errors': 0, 'skipped': 0}
+Lint: {'Warning': 24}; zero errors
+Instrumentation: OK (47 tests), 111.279 seconds; zero skips
+DB+WAL storage fixture: 2715648 -> 741376 bytes; 640 vectors
+768-dimensional vector BLOB: 3072 -> 780 bytes
+The storage fixture result is not a guarantee for an arbitrary user library.

@@ -15,6 +15,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -176,6 +178,79 @@ class PhotosAppTest {
         compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("system_settings"))
         compose.onNodeWithTag("system_settings").performClick()
         compose.runOnIdle { assertEquals(1, opens) }
+    }
+
+    @Test fun videoOcrDefaultsOffAndTheWholeRowTogglesItsStateOnce() {
+        var state by mutableStateOf(PhotosUiState())
+        val changes = mutableListOf<Boolean>()
+        val context = show {
+            PhotosApp(state, PhotosActions(videoOcrChanged = {
+                changes += it
+                state = state.copy(videoOcrEnabled = it)
+            }))
+        }
+        compose.onNodeWithTag("nav_2").performClick()
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("video_ocr_setting"))
+        compose.onNodeWithTag("video_ocr_setting").assertIsOff().assertIsEnabled()
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch))
+            .assertTextContains(context.getString(R.string.ui_video_ocr_title))
+            .assertTextContains(context.getString(R.string.ui_video_ocr_hint))
+            .performClick().assertIsOn()
+        compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch),
+            useUnmergedTree = true).assertCountEquals(1)
+        compose.runOnIdle { assertEquals(listOf(true), changes) }
+        compose.onNodeWithTag("video_ocr_setting").performClick().assertIsOff()
+        compose.runOnIdle { assertEquals(listOf(true, false), changes) }
+    }
+
+    @Test fun videoOcrCannotBeChangedWhileItsPreferenceIsSaving() {
+        var state by mutableStateOf(PhotosUiState(videoOcrEnabled = true, isSavingVideoOcrPreference = true))
+        val changes = mutableListOf<Boolean>()
+        show { PhotosApp(state, PhotosActions(videoOcrChanged = { changes += it })) }
+        compose.onNodeWithTag("nav_2").performClick()
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("video_ocr_setting"))
+        compose.onNodeWithTag("video_ocr_setting").assertIsOn().assertIsNotEnabled()
+            .performTouchInput { click() }
+        compose.runOnIdle {
+            assertTrue(changes.isEmpty())
+            state = state.copy(isSavingVideoOcrPreference = false)
+        }
+        compose.onNodeWithTag("video_ocr_setting").assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals(listOf(false), changes) }
+    }
+
+    @Test fun videoOcrCanBeChangedDuringIndexingWithANextRunExplanation() {
+        var changed: Boolean? = null
+        val context = show {
+            PhotosApp(PhotosUiState(isIndexing = true), PhotosActions(videoOcrChanged = { changed = it }))
+        }
+        compose.onNodeWithTag("nav_2").performClick()
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("video_ocr_setting"))
+        compose.onNodeWithTag("video_ocr_setting").assertIsEnabled()
+            .assertTextContains(context.getString(R.string.ui_video_ocr_hint)).performClick()
+        compose.runOnIdle { assertEquals(true, changed) }
+    }
+
+    @Test fun englishVideoOcrSettingWrapsAtLargeFontSize() = checkVideoOcrLargeText("en")
+    @Test fun simplifiedChineseVideoOcrSettingWrapsAtLargeFontSize() = checkVideoOcrLargeText("zh-CN")
+    @Test fun traditionalChineseVideoOcrSettingWrapsAtLargeFontSize() = checkVideoOcrLargeText("zh-TW")
+    @Test fun japaneseVideoOcrSettingWrapsAtLargeFontSize() = checkVideoOcrLargeText("ja")
+    @Test fun koreanVideoOcrSettingWrapsAtLargeFontSize() = checkVideoOcrLargeText("ko")
+    @Test fun hindiVideoOcrSettingWrapsAtLargeFontSize() = checkVideoOcrLargeText("hi")
+
+    private fun checkVideoOcrLargeText(language: String) = withFailureDiagnostics("video-ocr-large-$language") {
+        val context = show(language, 1.8f) { PhotosApp(PhotosUiState(), PhotosActions()) }
+        compose.onNodeWithTag("nav_2").performClick()
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("video_ocr_setting"))
+        compose.onNodeWithTag("video_ocr_setting").assertIsDisplayed().assertIsOff()
+        listOf(R.string.ui_video_ocr_title, R.string.ui_video_ocr_hint).forEach { resource ->
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithText(context.getString(resource), useUnmergedTree = true)
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertTrue("The video text recognition setting must expose its text layout", layouts.isNotEmpty())
+            assertTextFitsVisibleBounds(layouts,
+                "The full $language setting must remain readable\n${describeLayouts(layouts)}")
+        }
     }
 
     @Test fun searchingDoesNotShowTheNoResultsState() {

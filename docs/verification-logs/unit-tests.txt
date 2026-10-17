@@ -1,0 +1,9 @@
+{'tests': 34, 'failures': 0, 'errors': 0, 'skipped': 0}
+com.mcgeelee.photos.data.OcrTextMergeTest: 6 tests, 0 failures
+com.mcgeelee.photos.search.HybridSearchTest: 6 tests, 0 failures
+com.mcgeelee.photos.ml.AudioProcessingTest: 6 tests, 0 failures
+com.mcgeelee.photos.data.VideoSamplingTest: 4 tests, 0 failures
+com.mcgeelee.photos.indexing.TextIndexRetryTest: 4 tests, 0 failures
+com.mcgeelee.photos.data.VectorMathTest: 4 tests, 0 failures
+com.mcgeelee.photos.localization.RuntimeTextTest: 3 tests, 0 failures
+com.mcgeelee.photos.ExampleUnitTest: 1 tests, 0 failures

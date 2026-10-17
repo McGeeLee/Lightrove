@@ -1,0 +1,9 @@
+
+com.mcgeelee.photos.ui.OnboardingScreenTest:.
+com.mcgeelee.photos.ui.TextVisibilityAssertionsTest:.
+
+Time: 7.389
+
+OK (2 tests)
+
+

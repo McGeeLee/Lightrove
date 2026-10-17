@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lightrove</string>
+    <string name="activity_persist_access_failed">कुछ फ़ोटो की स्थायी ऐक्सेस सेव नहीं हो सकी। उन्हें फिर से चुनें।</string>
+    <string name="activity_browser_unavailable">इस लिंक को खोलने के लिए कोई ब्राउज़र उपलब्ध नहीं है।</string>
+    <string name="activity_access_denied">कुछ फ़ोटो चुनें या सिस्टम सेटिंग में लाइब्रेरी का ऐक्सेस दें।</string>
+    <string name="activity_settings_unavailable">सिस्टम सेटिंग नहीं खुल सकी।</string>
+    <string name="activity_onboarding_save_failed">सेटअप सेव नहीं हो सका। कृपया फिर कोशिश करें।</string>
+</resources>

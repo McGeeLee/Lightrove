@@ -1,0 +1,44 @@
+
+com.mcgeelee.photos.ui.OnboardingScreenTest:........
+Error in englishActionsAndGuidanceRemainReadableAtDoubleFontSize(com.mcgeelee.photos.ui.OnboardingScreenTest):
+java.lang.AssertionError: Onboarding text must wrap without visible clipping:
+text=Import from file
+size=476 x 98, constraints=Constraints(minWidth = 0, maxWidth = 764, minHeight = 0, maxHeight = Infinity), paragraph=764.0x98.0, overflowWidth=true, overflowHeight=false, exceededMaxLines=false
+lines=1, maxLines=2147483647, softWrap=true, overflow=Clip, density=androidx.compose.ui.node.LayoutModifierNodeCoordinator@ae430ba, style=TextStyle(color=Color(0.28627452, 0.27058825, 0.30980393, 1.0, sRGB IEC61966-2.1), brush=null, alpha=1.0, fontSize=14.0.sp, fontWeight=FontWeight(weight=500), fontStyle=null, fontSynthesis=null, fontFamily=FontFamily.SansSerif, fontFeatureSettings=null, letterSpacing=Unspecified, baselineShift=null, textGeometricTransform=null, localeList=null, background=Color(0.0, 0.0, 0.0, 0.0, None), textDecoration=null, shadow=null, drawStyle=null, textAlign=Center, textDirection=Unspecified, lineHeight=20.0.sp, textIndent=null, platformStyle=PlatformTextStyle(spanStyle=null, paragraphSyle=PlatformParagraphStyle(includeFontPadding=false, emojiSupportMatch=EmojiSupportMatch.Default)), lineHeightStyle=LineHeightStyle(alignment=LineHeightStyle.Alignment.Center, trim=LineHeightStyle.Trim.None,mode=LineHeightStyle.Mode.Fixed), lineBreak=LineBreak(strategy=Strategy.Unspecified, strictness=Strictness.Unspecified, wordBreak=WordBreak.Unspecified), hyphens=Hyphens.Unspecified, textMotion=null)
+line[0] start=0 end=16 left=144.0 right=620.0 top=0.0 bottom=98.0 ellipsized=false
+
+Character 15 (e) bounds Rect.fromLTRB(440.8, 0.0, 476.8, 98.0) are outside 476 x 98
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at com.mcgeelee.photos.ui.TextVisibilityAssertionsKt.assertTextFitsVisibleBounds(TextVisibilityAssertions.kt:19)
+	at com.mcgeelee.photos.ui.OnboardingScreenTest.assertRenderedTextDoesNotOverflow(OnboardingScreenTest.kt:270)
+	at com.mcgeelee.photos.ui.OnboardingScreenTest.checkLargeText(OnboardingScreenTest.kt:255)
+	at com.mcgeelee.photos.ui.OnboardingScreenTest.englishActionsAndGuidanceRemainReadableAtDoubleFontSize(OnboardingScreenTest.kt:209)
+
+com.mcgeelee.photos.ui.PhotosAppTest:.............
+com.mcgeelee.photos.ui.VideoPlaybackTest:..
+com.mcgeelee.photos.ui.TextVisibilityAssertionsTest:.
+com.mcgeelee.photos.localization.AppLanguageSettingsTest:....
+com.mcgeelee.photos.localization.AppLanguageTest:.....
+
+Time: 112.293
+There was 1 failure:
+1) englishActionsAndGuidanceRemainReadableAtDoubleFontSize(com.mcgeelee.photos.ui.OnboardingScreenTest)
+java.lang.AssertionError: Onboarding text must wrap without visible clipping:
+text=Import from file
+size=476 x 98, constraints=Constraints(minWidth = 0, maxWidth = 764, minHeight = 0, maxHeight = Infinity), paragraph=764.0x98.0, overflowWidth=true, overflowHeight=false, exceededMaxLines=false
+lines=1, maxLines=2147483647, softWrap=true, overflow=Clip, density=androidx.compose.ui.node.LayoutModifierNodeCoordinator@ae430ba, style=TextStyle(color=Color(0.28627452, 0.27058825, 0.30980393, 1.0, sRGB IEC61966-2.1), brush=null, alpha=1.0, fontSize=14.0.sp, fontWeight=FontWeight(weight=500), fontStyle=null, fontSynthesis=null, fontFamily=FontFamily.SansSerif, fontFeatureSettings=null, letterSpacing=Unspecified, baselineShift=null, textGeometricTransform=null, localeList=null, background=Color(0.0, 0.0, 0.0, 0.0, None), textDecoration=null, shadow=null, drawStyle=null, textAlign=Center, textDirection=Unspecified, lineHeight=20.0.sp, textIndent=null, platformStyle=PlatformTextStyle(spanStyle=null, paragraphSyle=PlatformParagraphStyle(includeFontPadding=false, emojiSupportMatch=EmojiSupportMatch.Default)), lineHeightStyle=LineHeightStyle(alignment=LineHeightStyle.Alignment.Center, trim=LineHeightStyle.Trim.None,mode=LineHeightStyle.Mode.Fixed), lineBreak=LineBreak(strategy=Strategy.Unspecified, strictness=Strictness.Unspecified, wordBreak=WordBreak.Unspecified), hyphens=Hyphens.Unspecified, textMotion=null)
+line[0] start=0 end=16 left=144.0 right=620.0 top=0.0 bottom=98.0 ellipsized=false
+
+Character 15 (e) bounds Rect.fromLTRB(440.8, 0.0, 476.8, 98.0) are outside 476 x 98
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at com.mcgeelee.photos.ui.TextVisibilityAssertionsKt.assertTextFitsVisibleBounds(TextVisibilityAssertions.kt:19)
+	at com.mcgeelee.photos.ui.OnboardingScreenTest.assertRenderedTextDoesNotOverflow(OnboardingScreenTest.kt:270)
+	at com.mcgeelee.photos.ui.OnboardingScreenTest.checkLargeText(OnboardingScreenTest.kt:255)
+	at com.mcgeelee.photos.ui.OnboardingScreenTest.englishActionsAndGuidanceRemainReadableAtDoubleFontSize(OnboardingScreenTest.kt:209)
+
+FAILURES!!!
+Tests run: 34,  Failures: 1
+
+

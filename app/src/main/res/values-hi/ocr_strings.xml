@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ocr_image_unavailable">यह तस्वीर पढ़ी नहीं जा सकती। हो सकता है कि इसे हटा दिया गया हो या पहुँच की अनुमति बदल गई हो।</string>
+    <string name="ocr_all_scripts_failed">किसी भी लिपि का पाठ पहचाना नहीं जा सका। कृपया फिर से इंडेक्स बनाएँ।</string>
+    <string name="ocr_closed">पाठ पहचान बंद हो चुकी है। कृपया फिर से प्रयास करें।</string>
+</resources>

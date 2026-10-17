@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ocr_image_unavailable">无法读取此图片，文件可能已删除或访问权限已变更。</string>
+    <string name="ocr_all_scripts_failed">所有文字体系的识别均失败，请重新建立索引。</string>
+    <string name="ocr_closed">文字识别已关闭，请重试。</string>
+</resources>

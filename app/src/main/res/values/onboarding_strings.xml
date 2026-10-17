@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_close">Close guide</string>
+    <string name="onboarding_settings_title">Getting started</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_next">Continue</string>
+    <string name="onboarding_finish">Finish</string>
+    <string name="onboarding_skip">Set up later</string>
+    <string name="onboarding_step">Step %1$d of 3</string>
+    <string name="onboarding_welcome_title">Find your memories</string>
+    <string name="onboarding_text_title">Text search (OCR)</string>
+    <string name="onboarding_image_title">Scenes and similar images</string>
+    <string name="onboarding_audio_title">Sounds in videos</string>
+    <string name="onboarding_privacy_title">Private, on-device search</string>
+    <string name="onboarding_access_title">Choose what to search</string>
+    <string name="onboarding_access_limited">Selected photos and videos</string>
+    <string name="onboarding_access_granted">Library access granted</string>
+    <string name="onboarding_access_selected">Selection ready</string>
+    <string name="onboarding_access_waiting">No access yet</string>
+    <string name="onboarding_allow_library">Allow library access</string>
+    <string name="onboarding_model_title">Scene and sound search</string>
+    <string name="onboarding_model_body">About 485 MB · On device · OCR works without it</string>
+    <string name="onboarding_model_finish_hint">Finish during download; start indexing from Home.</string>
+    <plurals name="onboarding_access_count">
+        <item quantity="one">%1$d item available</item>
+        <item quantity="other">%1$d items available</item>
+    </plurals>
+</resources>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_close">關閉導覽</string>
+    <string name="onboarding_settings_title">入門導覽</string>
+    <string name="onboarding_back">上一步</string>
+    <string name="onboarding_next">繼續</string>
+    <string name="onboarding_finish">完成</string>
+    <string name="onboarding_skip">稍後設定</string>
+    <string name="onboarding_step">第 %1$d 步，共 3 步</string>
+    <string name="onboarding_welcome_title">尋找回憶</string>
+    <string name="onboarding_text_title">文字搜尋（OCR）</string>
+    <string name="onboarding_image_title">畫面與相似圖片</string>
+    <string name="onboarding_audio_title">影片中的聲音</string>
+    <string name="onboarding_privacy_title">本機私密搜尋</string>
+    <string name="onboarding_access_title">選擇搜尋範圍</string>
+    <string name="onboarding_access_limited">已選照片與影片</string>
+    <string name="onboarding_access_granted">已授權圖庫</string>
+    <string name="onboarding_access_selected">已完成選擇</string>
+    <string name="onboarding_access_waiting">尚未授權</string>
+    <string name="onboarding_allow_library">授權存取圖庫</string>
+    <string name="onboarding_model_title">畫面與聲音搜尋</string>
+    <string name="onboarding_model_body">約 485 MB · 本機執行 · OCR 無需此模型</string>
+    <string name="onboarding_model_finish_hint">下載時也可完成引導，索引需在首頁手動開始。</string>
+    <plurals name="onboarding_access_count">
+        <item quantity="other">可存取 %1$d 項內容</item>
+    </plurals>
+</resources>

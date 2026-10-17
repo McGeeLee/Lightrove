@@ -1,0 +1,3 @@
+PASS :app:assembleDebug --dry-run (exit 0)
+PASS :app:verifyReleaseSigning (exit 1)
+PASS :app:assembleRelease -PrequireReleaseSigning=true (exit 1)

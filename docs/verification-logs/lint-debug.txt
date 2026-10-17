@@ -1,0 +1,225 @@
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/java/com/mcgeelee/photos/localization/AppLanguageSettings.kt:16: Warning: Field requires API level 33 (current min is 31): android.provider.Settings#ACTION_APP_LOCALE_SETTINGS [InlinedApi]
+                Intent(Settings.ACTION_APP_LOCALE_SETTINGS, packageUri),
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "InlinedApi":
+   This check scans through all the Android API field references in the
+   application and flags certain constants, such as static final integers and
+   Strings, which were introduced in later versions. These will actually be
+   copied into the class files rather than being referenced, which means that
+   the value is available even when running on older devices. In some cases
+   that's fine, and in other cases it can result in a runtime crash or
+   incorrect behavior. It depends on the context, so consider the code
+   carefully and decide whether it's safe and can be suppressed or whether the
+   code needs to be guarded.
+
+   If you really want to use this API and don't need to support older devices
+   just set the minSdkVersion in your build.gradle or AndroidManifest.xml
+   files.
+
+   If your code is deliberately accessing newer APIs, and you have ensured
+   (e.g. with conditional execution) that this code will only ever be called
+   on a supported platform, then you can annotate your class or method with
+   the @TargetApi annotation specifying the local minimum SDK to apply, such
+   as @TargetApi(11), such that this check considers 11 rather than your
+   manifest file's minimum SDK as the required API level.
+
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/AndroidManifest.xml:19: Warning: Attribute localeConfig is only used in API level 33 and higher (current min is 31) [UnusedAttribute]
+        android:localeConfig="@xml/locales_config"
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "UnusedAttribute":
+   This check finds attributes set in XML files that were introduced in a
+   version newer than the oldest version targeted by your application (with
+   the minSdkVersion attribute).
+
+   This is not an error; the application will simply ignore the attribute.
+   However, if the attribute is important to the appearance or functionality
+   of your application, you should consider finding an alternative way to
+   achieve the same result with only available attributes, and then you can
+   optionally create a copy of the layout in a layout-vNN folder which will be
+   used on API NN or higher where you can take advantage of the newer
+   attribute.
+
+   Note: This check does not only apply to attributes. For example, some tags
+   can be unused too, such as the new <tag> element in layouts introduced in
+   API 21.
+
+/Users/mcgee/AndroidStudioProjects/photos/gradle/wrapper/gradle-wrapper.properties:3: Warning: A newer version of Gradle than 9.8.0 is available: 9.8.1 [AndroidGradlePluginVersion]
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.8.0-bin.zip
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "AndroidGradlePluginVersion":
+   This detector looks for usage of the Android Gradle Plugin where the
+   version you are using is not the current stable release. Using older
+   versions is fine, and there are cases where you deliberately want to stick
+   with an older version. However, you may simply not be aware that a more
+   recent version is available, and that is what this lint check helps find.
+
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/java/com/mcgeelee/photos/ui/theme/Theme.kt:58: Warning: Unnecessary; SDK_INT is always >= 31 [ObsoleteSdkInt]
+    val colors = if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "ObsoleteSdkInt":
+   This check flags version checks that are not necessary, because the
+   minSdkVersion (or surrounding known API level) is already at least as high
+   as the version checked for.
+
+   Similarly, it also looks for resources in -vNN folders, such as values-v14
+   where the version qualifier is less than or equal to the minSdkVersion,
+   where the contents should be merged into the best folder.
+
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/res/values/colors.xml:3: Warning: The resource R.color.purple_200 appears to be unused [UnusedResources]
+    <color name="purple_200">#FFBB86FC</color>
+           ~~~~~~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/res/values/colors.xml:4: Warning: The resource R.color.purple_500 appears to be unused [UnusedResources]
+    <color name="purple_500">#FF6200EE</color>
+           ~~~~~~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/res/values/colors.xml:5: Warning: The resource R.color.purple_700 appears to be unused [UnusedResources]
+    <color name="purple_700">#FF3700B3</color>
+           ~~~~~~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/res/values/colors.xml:6: Warning: The resource R.color.teal_200 appears to be unused [UnusedResources]
+    <color name="teal_200">#FF03DAC5</color>
+           ~~~~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/res/values/colors.xml:7: Warning: The resource R.color.teal_700 appears to be unused [UnusedResources]
+    <color name="teal_700">#FF018786</color>
+           ~~~~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/res/values/colors.xml:8: Warning: The resource R.color.black appears to be unused [UnusedResources]
+    <color name="black">#FF000000</color>
+           ~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/res/values/colors.xml:9: Warning: The resource R.color.white appears to be unused [UnusedResources]
+    <color name="white">#FFFFFFFF</color>
+           ~~~~~~~~~~~~
+
+   Explanation for issues of type "UnusedResources":
+   Unused resources make applications larger and slow down builds.
+
+
+   The unused resource check can ignore tests. If you want to include
+   resources that are only referenced from tests, consider packaging them in a
+   test source set instead.
+
+   You can include test sources in the unused resource check by setting the
+   system property lint.unused-resources.include-tests=true, and to exclude
+   them (usually for performance reasons), use
+   lint.unused-resources.exclude-tests=true.
+
+   Available options:
+
+   **skip-libraries** (default is true):
+   Whether the unused resource check should skip reporting unused resources in libraries.
+
+   Many libraries will declare resources that are part of the library surface; other modules depending on the library will also reference the resources. To avoid reporting all these resources as unused (in the context of a library), the unused resource check normally skips reporting unused resources in libraries. Instead, run the unused resource check on the consuming app module (along with `checkDependencies=true`).
+
+   However, there are cases where you want to check that all the resources declared in a library are used; in that case, you can disable the skip option.
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UnusedResources">
+           <option name="skip-libraries" value="true" />
+       </issue>
+   </lint>
+   ```
+
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/java/com/mcgeelee/photos/ml/ModelManager.kt:120: Warning: Consider also using StorageManager#getAllocatableBytes and allocateBytes which will consider clearable cached data [UsableSpace]
+                require(directory.usableSpace > MODEL_BYTES + 32L * 1024 * 1024) { runtimeText(RuntimeMessage.MODEL_NO_SPACE).encode() }
+                                  ~~~~~~~~~~~
+
+   Explanation for issues of type "UsableSpace":
+   When you need to allocate disk space for large files, consider using the
+   new allocateBytes(FileDescriptor, long) API, which will automatically clear
+   cached files belonging to other apps (as needed) to meet your request.
+
+   When deciding if the device has enough disk space to hold your new data,
+   call getAllocatableBytes(UUID) instead of using getUsableSpace(), since the
+   former will consider any cached data that the system is willing to clear on
+   your behalf.
+
+   Note that these methods require API level 26. If your app is running on
+   older devices, you will probably need to use both APIs, conditionally
+   switching on Build.VERSION.SDK_INT. Lint only looks in the same compilation
+   unit to see if you are already using both APIs, so if it warns even though
+   you are already using the new API, consider moving the calls to the same
+   file or suppressing the warning.
+
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/java/com/mcgeelee/photos/indexing/LibraryIndexWorker.kt:118: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                                    graph.audio.decode(Uri.parse(asset.uri)) { audio ->
+                                                       ~~~~~~~~~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/java/com/mcgeelee/photos/MainActivity.kt:102: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                        try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(ModelManager.MODEL_PAGE))) }
+                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/java/com/mcgeelee/photos/MainActivity.kt:112: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                        try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }
+                                                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/java/com/mcgeelee/photos/data/MediaLibrary.kt:154: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            resolver.loadThumbnail(Uri.parse(asset.uri), Size(size, size), null)
+                                   ~~~~~~~~~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/java/com/mcgeelee/photos/data/MediaLibrary.kt:160: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+        imageBitmap(Uri.parse(asset.uri), maxDimension)
+                    ~~~~~~~~~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/java/com/mcgeelee/photos/data/MediaLibrary.kt:183: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                    retriever.setDataSource(context, Uri.parse(asset.uri))
+                                                     ~~~~~~~~~~~~~~~~~~~~
+/Users/mcgee/AndroidStudioProjects/photos/app/src/main/java/com/mcgeelee/photos/data/MediaLibrary.kt:198: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            retriever.setDataSource(context, Uri.parse(asset.uri))
+                                             ~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "UseKtx":
+   The Android KTX libraries decorates the Android platform SDK as well as
+   various libraries with more convenient extension functions available from
+   Kotlin, allowing you to use default parameters, named parameters, and
+   more.
+
+   Available options:
+
+   **remove-defaults** (default is true):
+   Whether to skip arguments that match the defaults provided by the extension.
+
+   Extensions often provide default values for some of the parameters. For example:
+   ```kotlin
+   fun Path.readLines(charset: Charset = Charsets.UTF_8): List<String> { return Files.readAllLines(this, charset) }
+   ```
+   This lint check will by default automatically omit parameters that match the default, so if your code was calling
+
+   ```kotlin
+   Files.readAllLines(file, Charset.UTF_8)
+   ```
+   lint would replace this with
+   ```kotlin
+   file.readLines()
+   ```
+   rather than
+
+   ```kotlin
+   file.readLines(Charset.UTF_8
+   ```
+   You can turn this behavior off using this option.
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UseKtx">
+           <option name="remove-defaults" value="true" />
+       </issue>
+   </lint>
+   ```
+
+   **require-present** (default is true):
+   Whether to only offer extensions already available.
+
+   This option lets you only have lint suggest extension replacements if those extensions are already available on the class path (in other words, you're already depending on the library containing the extension method.)
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UseKtx">
+           <option name="require-present" value="true" />
+       </issue>
+   </lint>
+   ```
+
+0 errors, 19 warnings

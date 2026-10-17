@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">拾光</string>
+    <string name="activity_persist_access_failed">部分照片的持續存取權限無法儲存，請重新選取。</string>
+    <string name="activity_browser_unavailable">沒有可開啟此連結的瀏覽器。</string>
+    <string name="activity_access_denied">你可以選取指定照片，或在系統設定中允許存取圖庫。</string>
+    <string name="activity_settings_unavailable">無法開啟系統設定。</string>
+    <string name="activity_onboarding_save_failed">無法儲存設定，請再試一次。</string>
+</resources>

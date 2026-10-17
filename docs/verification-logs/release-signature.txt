@@ -1,0 +1,1 @@
+Verified APK and AAB signer SHA-256: 69bebcec726f3864e0be9619dd0cc4b94f8f4ce3ef647615269ffb1fb686c3c7

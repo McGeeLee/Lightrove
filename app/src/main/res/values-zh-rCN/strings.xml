@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">拾光</string>
+    <string name="activity_persist_access_failed">部分照片的长期访问权限无法保存，请重新选择。</string>
+    <string name="activity_browser_unavailable">没有可打开此链接的浏览器。</string>
+    <string name="activity_access_denied">你可以选择指定照片，或在系统设置中允许访问图库。</string>
+    <string name="activity_settings_unavailable">无法打开系统设置。</string>
+    <string name="activity_onboarding_save_failed">无法保存设置，请重试。</string>
+</resources>

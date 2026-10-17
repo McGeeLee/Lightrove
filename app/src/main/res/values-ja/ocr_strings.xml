@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ocr_image_unavailable">この画像を読み込めません。削除されたか、アクセス権限が変更された可能性があります。</string>
+    <string name="ocr_all_scripts_failed">すべての文字体系で文字認識に失敗しました。インデックスを再作成してください。</string>
+    <string name="ocr_closed">文字認識はすでに終了しています。もう一度お試しください。</string>
+</resources>

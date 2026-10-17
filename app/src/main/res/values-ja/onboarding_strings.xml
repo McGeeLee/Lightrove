@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_close">ガイドを閉じる</string>
+    <string name="onboarding_settings_title">はじめに</string>
+    <string name="onboarding_back">戻る</string>
+    <string name="onboarding_next">次へ</string>
+    <string name="onboarding_finish">完了</string>
+    <string name="onboarding_skip">あとで設定</string>
+    <string name="onboarding_step">ステップ %1$d / 3</string>
+    <string name="onboarding_welcome_title">思い出を探す</string>
+    <string name="onboarding_text_title">文字検索（OCR）</string>
+    <string name="onboarding_image_title">風景と類似画像</string>
+    <string name="onboarding_audio_title">動画内の音</string>
+    <string name="onboarding_privacy_title">端末内でプライベート検索</string>
+    <string name="onboarding_access_title">検索する写真と動画を選ぶ</string>
+    <string name="onboarding_access_limited">選択した写真と動画</string>
+    <string name="onboarding_access_granted">ライブラリへのアクセスを許可済み</string>
+    <string name="onboarding_access_selected">選択済み</string>
+    <string name="onboarding_access_waiting">アクセス未許可</string>
+    <string name="onboarding_allow_library">ライブラリへのアクセスを許可</string>
+    <string name="onboarding_model_title">風景と音の検索</string>
+    <string name="onboarding_model_body">約 485 MB・端末内で動作・OCR は追加モデル不要</string>
+    <string name="onboarding_model_finish_hint">ダウンロード中も完了でき、インデックスはホームから開始できます。</string>
+    <plurals name="onboarding_access_count">
+        <item quantity="other">%1$d 件の項目を利用できます</item>
+    </plurals>
+</resources>

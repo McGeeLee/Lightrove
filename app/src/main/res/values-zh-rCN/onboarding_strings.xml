@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_close">关闭引导</string>
+    <string name="onboarding_settings_title">入门引导</string>
+    <string name="onboarding_back">上一步</string>
+    <string name="onboarding_next">继续</string>
+    <string name="onboarding_finish">完成</string>
+    <string name="onboarding_skip">稍后设置</string>
+    <string name="onboarding_step">第 %1$d 步，共 3 步</string>
+    <string name="onboarding_welcome_title">寻找回忆</string>
+    <string name="onboarding_text_title">文字搜索（OCR）</string>
+    <string name="onboarding_image_title">画面与相似图片</string>
+    <string name="onboarding_audio_title">视频中的声音</string>
+    <string name="onboarding_privacy_title">本机私密搜索</string>
+    <string name="onboarding_access_title">选择搜索范围</string>
+    <string name="onboarding_access_limited">已选照片与视频</string>
+    <string name="onboarding_access_granted">已授权图库</string>
+    <string name="onboarding_access_selected">已完成选择</string>
+    <string name="onboarding_access_waiting">尚未授权</string>
+    <string name="onboarding_allow_library">授权访问图库</string>
+    <string name="onboarding_model_title">画面与声音搜索</string>
+    <string name="onboarding_model_body">约 485 MB · 本机运行 · OCR 无需此模型</string>
+    <string name="onboarding_model_finish_hint">下载时也可完成引导，索引需在首页手动开始。</string>
+    <plurals name="onboarding_access_count">
+        <item quantity="other">可访问 %1$d 项内容</item>
+    </plurals>
+</resources>

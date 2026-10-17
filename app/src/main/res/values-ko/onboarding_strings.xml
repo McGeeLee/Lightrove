@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_close">가이드 닫기</string>
+    <string name="onboarding_settings_title">시작 가이드</string>
+    <string name="onboarding_back">뒤로</string>
+    <string name="onboarding_next">계속</string>
+    <string name="onboarding_finish">완료</string>
+    <string name="onboarding_skip">나중에 설정</string>
+    <string name="onboarding_step">%1$d / 3단계</string>
+    <string name="onboarding_welcome_title">추억 찾기</string>
+    <string name="onboarding_text_title">텍스트 검색(OCR)</string>
+    <string name="onboarding_image_title">장면과 비슷한 이미지</string>
+    <string name="onboarding_audio_title">동영상 속 소리</string>
+    <string name="onboarding_privacy_title">기기 내 비공개 검색</string>
+    <string name="onboarding_access_title">검색할 사진과 동영상 선택</string>
+    <string name="onboarding_access_limited">선택한 사진과 동영상</string>
+    <string name="onboarding_access_granted">라이브러리 접근 허용됨</string>
+    <string name="onboarding_access_selected">선택 완료</string>
+    <string name="onboarding_access_waiting">접근 권한 없음</string>
+    <string name="onboarding_allow_library">갤러리 접근 허용</string>
+    <string name="onboarding_model_title">장면과 소리 검색</string>
+    <string name="onboarding_model_body">약 485 MB · 기기에서 실행 · OCR은 추가 모델 불필요</string>
+    <string name="onboarding_model_finish_hint">다운로드 중에도 완료할 수 있으며 색인은 홈에서 시작하세요.</string>
+    <plurals name="onboarding_access_count">
+        <item quantity="other">%1$d개 항목에 접근할 수 있어요</item>
+    </plurals>
+</resources>

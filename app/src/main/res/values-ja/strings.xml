@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lightrove</string>
+    <string name="activity_persist_access_failed">一部の写真への継続的なアクセスを保存できませんでした。もう一度選択してください。</string>
+    <string name="activity_browser_unavailable">このリンクを開くブラウザが見つかりません。</string>
+    <string name="activity_access_denied">写真を個別に選択するか、システム設定でライブラリへのアクセスを許可してください。</string>
+    <string name="activity_settings_unavailable">システム設定を開けませんでした。</string>
+    <string name="activity_onboarding_save_failed">設定を保存できませんでした。もう一度お試しください。</string>
+</resources>

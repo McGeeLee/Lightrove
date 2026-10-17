@@ -1,0 +1,116 @@
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:processDebugNavigationResources
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:javaPreCompileDebug
+> Task :app:parseDebugLocalResources
+> Task :app:mergeDebugAssets
+> Task :app:generateDebugRFile
+> Task :app:compressDebugAssets
+> Task :app:generateDebugGlobalSynthetics
+> Task :app:desugarDebugFileDependencies
+> Task :app:mapDebugSourceSetPaths
+> Task :app:checkDebugAarMetadata
+> Task :app:compileDebugNavigationResources
+> Task :app:checkDebugDuplicateClasses
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:mergeDebugJniLibFolders
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:mergeLibDexDebug
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:generateDebugAndroidTestResources
+> Task :app:packageDebugAndroidTestResources
+> Task :app:processDebugAndroidTestNavigationResources
+> Task :app:processDebugManifestForPackage
+> Task :app:generateDebugAndroidTestAssets UP-TO-DATE
+> Task :app:javaPreCompileDebugAndroidTest
+> Task :app:parseDebugAndroidTestLocalResources
+> Task :app:mergeDebugResources
+> Task :app:mergeDebugNativeLibs
+> Task :app:mergeDebugAndroidTestAssets
+> Task :app:generateDebugAndroidTestRFile
+> Task :app:compressDebugAndroidTestAssets
+
+> Task :app:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libdatastore_shared_counter.so, liblitertlm_jni.so, libmlkit_google_ocr_pipeline.so. Run with --info option to learn more.
+
+> Task :app:generateDebugAndroidTestGlobalSynthetics
+> Task :app:desugarDebugAndroidTestFileDependencies
+> Task :app:checkDebugAndroidTestDuplicateClasses
+> Task :app:checkDebugAndroidTestAarMetadata
+> Task :app:mapDebugAndroidTestSourceSetPaths
+> Task :app:mergeLibDexDebugAndroidTest
+> Task :app:compileDebugAndroidTestNavigationResources
+> Task :app:processDebugResources
+> Task :app:mergeDebugAndroidTestManifest
+> Task :app:processDebugAndroidTestManifest
+> Task :app:mergeDebugAndroidTestJniLibFolders
+> Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+> Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebugAndroidTest
+> Task :app:writeDebugAndroidTestSigningConfigVersions
+> Task :app:mergeDebugAndroidTestResources
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest
+> Task :app:extractProguardFiles
+> Task :app:processDebugAndroidTestResources
+> Task :app:mergeExtDexDebugAndroidTest
+> Task :app:kspDebugKotlin
+> Task :app:mergeExtDexDebug
+> Task :app:compileDebugKotlin
+> Task :app:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes
+> Task :app:dexBuilderDebug
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:mergeProjectDexDebug
+> Task :app:generateDebugLintReportModel
+> Task :app:mergeDebugJavaResource
+> Task :app:kspDebugAndroidTestKotlin UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin UP-TO-DATE
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:generateDebugUnitTestLintModel
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+> Task :app:testDebugUnitTest
+> Task :app:compileDebugAndroidTestKotlin
+> Task :app:compileDebugAndroidTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugAndroidTestJavaRes
+> Task :app:mergeDebugAndroidTestJavaResource
+> Task :app:dexBuilderDebugAndroidTest
+> Task :app:mergeProjectDexDebugAndroidTest
+> Task :app:packageDebugAndroidTest
+> Task :app:createDebugAndroidTestApkListingFileRedirect
+> Task :app:assembleDebugAndroidTest
+> Task :app:lintAnalyzeDebugUnitTest
+> Task :app:lintAnalyzeDebug
+> Task :app:lintAnalyzeDebugAndroidTest
+
+> Task :app:lintReportDebug
+Wrote HTML report to file:///private/tmp/photos-delivery-build/app/reports/lint-results-debug.html
+Wrote SARIF report to file:///private/tmp/photos-delivery-build/app/reports/lint-results-debug.sarif
+
+> Task :app:lintDebug
+
+[Incubating] Problems report is available at: file:///private/tmp/photos-delivery-build/root/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 2m 55s
+84 actionable tasks: 82 executed, 2 up-to-date

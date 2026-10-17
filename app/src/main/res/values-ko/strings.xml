@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lightrove</string>
+    <string name="activity_persist_access_failed">일부 사진의 지속적인 접근 권한을 저장하지 못했습니다. 다시 선택해 주세요.</string>
+    <string name="activity_browser_unavailable">이 링크를 열 수 있는 브라우저가 없습니다.</string>
+    <string name="activity_access_denied">사진을 개별적으로 선택하거나 시스템 설정에서 사진 보관함 접근을 허용해 주세요.</string>
+    <string name="activity_settings_unavailable">시스템 설정을 열 수 없습니다.</string>
+    <string name="activity_onboarding_save_failed">설정을 저장하지 못했습니다. 다시 시도해 주세요.</string>
+</resources>

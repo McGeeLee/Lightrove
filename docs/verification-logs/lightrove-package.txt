@@ -1,0 +1,18 @@
+package: name='com.mcgeelee.photos' versionCode='2' versionName='0.2.0' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+application-label:'Lightrove'
+application-label-hi:'Lightrove'
+application-label-ja:'Lightrove'
+application-label-ko:'Lightrove'
+application-label-zh-CN:'拾光'
+application-label-zh-TW:'拾光'
+Debug Manifest: testOnly absent
+
+Release
+package: name='com.mcgeelee.photos' versionCode='2' versionName='0.2.0' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+application-label:'Lightrove'
+application-label-hi:'Lightrove'
+application-label-ja:'Lightrove'
+application-label-ko:'Lightrove'
+application-label-zh-CN:'拾光'
+application-label-zh-TW:'拾光'
+Release Manifest: testOnly and debuggable absent

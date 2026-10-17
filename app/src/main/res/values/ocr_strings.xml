@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ocr_image_unavailable">Cannot read this image. It may have been removed or access may have changed.</string>
+    <string name="ocr_all_scripts_failed">Text recognition failed for all scripts. Please try indexing again.</string>
+    <string name="ocr_closed">Text recognition has already closed. Please try again.</string>
+</resources>

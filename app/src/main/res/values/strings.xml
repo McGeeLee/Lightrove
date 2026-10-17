@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lightrove</string>
+    <string name="activity_persist_access_failed">Some photos could not be kept accessible. Please select them again.</string>
+    <string name="activity_browser_unavailable">No browser is available to open this link.</string>
+    <string name="activity_access_denied">Choose specific photos, or enable library access in system settings.</string>
+    <string name="activity_settings_unavailable">System settings could not be opened.</string>
+    <string name="activity_onboarding_save_failed">Your setup could not be saved. Please try again.</string>
+</resources>

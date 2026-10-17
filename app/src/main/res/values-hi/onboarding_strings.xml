@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_close">गाइड बंद करें</string>
+    <string name="onboarding_settings_title">शुरू करने की गाइड</string>
+    <string name="onboarding_back">पीछे</string>
+    <string name="onboarding_next">आगे बढ़ें</string>
+    <string name="onboarding_finish">पूरा करें</string>
+    <string name="onboarding_skip">बाद में सेट अप करें</string>
+    <string name="onboarding_step">3 में से चरण %1$d</string>
+    <string name="onboarding_welcome_title">अपने पल खोजें</string>
+    <string name="onboarding_text_title">टेक्स्ट खोज (OCR)</string>
+    <string name="onboarding_image_title">दृश्य और मिलती-जुलती तस्वीरें</string>
+    <string name="onboarding_audio_title">वीडियो की आवाज़</string>
+    <string name="onboarding_privacy_title">डिवाइस पर निजी खोज</string>
+    <string name="onboarding_access_title">क्या खोजना है, चुनें</string>
+    <string name="onboarding_access_limited">चुने गए फ़ोटो और वीडियो</string>
+    <string name="onboarding_access_granted">गैलरी का ऐक्सेस मिल गया</string>
+    <string name="onboarding_access_selected">चुन लिया गया</string>
+    <string name="onboarding_access_waiting">अभी ऐक्सेस नहीं मिला</string>
+    <string name="onboarding_allow_library">गैलरी का ऐक्सेस दें</string>
+    <string name="onboarding_model_title">दृश्य और आवाज़ की खोज</string>
+    <string name="onboarding_model_body">लगभग 485 MB · डिवाइस पर · OCR को यह मॉडल नहीं चाहिए</string>
+    <string name="onboarding_model_finish_hint">डाउनलोड के दौरान भी पूरा करें; इंडेक्सिंग होम से शुरू करें।</string>
+    <plurals name="onboarding_access_count">
+        <item quantity="one">%1$d आइटम उपलब्ध है</item>
+        <item quantity="other">%1$d आइटम उपलब्ध हैं</item>
+    </plurals>
+</resources>

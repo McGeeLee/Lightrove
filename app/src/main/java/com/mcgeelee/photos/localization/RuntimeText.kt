@@ -80,11 +80,18 @@ enum class RuntimeMessage(val resource: Int, val plural: Boolean = false) {
     INDEX_WITH_RETRIES(R.string.runtime_index_with_retries),
     INDEX_PARTIAL(R.plurals.runtime_index_partial, plural = true),
     INDEX_RETRY_COUNT(R.plurals.runtime_index_retry_count, plural = true),
+    STAGE_FAILURE(R.string.runtime_stage_failure),
+    INDEX_PAUSED_ERRORS(R.string.runtime_index_paused_errors),
 }
 
 data class RuntimeText(val key: RuntimeMessage, val arguments: List<Any> = emptyList()) {
     fun render(context: Context): String {
         val localized = AppLanguage.localizedContext(context)
+        if (key == RuntimeMessage.STAGE_FAILURE) {
+            val stage = decode(arguments[0] as String)?.render(context).orEmpty()
+            val reason = arguments[1] as String
+            return localized.getString(key.resource, stage, decode(reason)?.render(context) ?: reason)
+        }
         return if (key.plural) {
             val count = (arguments.firstOrNull() as? Number)?.toInt() ?: 0
             localized.resources.getQuantityString(key.resource, count, *arguments.toTypedArray())
@@ -119,7 +126,7 @@ data class RuntimeText(val key: RuntimeMessage, val arguments: List<Any> = empty
                     RuntimeMessage.INDEX_PROCESSING -> arguments.size == 1 && arguments[0] is String
                     RuntimeMessage.INDEX_FRAME, RuntimeMessage.INDEX_AUDIO ->
                         arguments.size == 2 && arguments[0] is String && arguments[1] is Long
-                    RuntimeMessage.INDEX_WITH_RETRIES -> arguments.size == 2 && arguments.all { it is String }
+                    RuntimeMessage.INDEX_WITH_RETRIES, RuntimeMessage.STAGE_FAILURE -> arguments.size == 2 && arguments.all { it is String }
                     else -> arguments.isEmpty()
                 }
                 if (validArguments) RuntimeText(key, arguments) else null
@@ -128,6 +135,15 @@ data class RuntimeText(val key: RuntimeMessage, val arguments: List<Any> = empty
 
         fun fromError(error: Throwable, fallback: RuntimeMessage): RuntimeText =
             decode(error.message) ?: RuntimeText(fallback)
+
+        fun stageFailure(stage: RuntimeMessage, error: Throwable): RuntimeText {
+            val causes = generateSequence(error) { it.cause }.take(6).toList()
+            val cause = causes.lastOrNull { !it.message.isNullOrBlank() } ?: error
+            val message = cause.message.orEmpty()
+            val detail = decode(message)?.encode() ?: "${cause.javaClass.simpleName}: $message"
+                .replace(Regex("[\\r\\n\\t]+"), " ").take(240)
+            return runtimeText(RuntimeMessage.STAGE_FAILURE, runtimeText(stage).encode(), detail)
+        }
 
         /** Old releases persisted Chinese/SDK prose; replace it with the current localized fallback. */
         fun renderStored(value: String?, context: Context, fallback: RuntimeMessage): String =

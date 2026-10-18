@@ -84,6 +84,7 @@ class MainActivity : AppCompatActivity() {
             val actions = PhotosActions(
                     queryChanged = model::queryChanged,
                     filterChanged = model::filterChanged,
+                    searchThresholdChanged = model::setSearchThreshold,
                     requestPermission = { permissions.launch(mediaPermissions()) },
                     pickMedia = { media.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) },
                     pickImageQuery = { image.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },

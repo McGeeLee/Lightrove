@@ -31,6 +31,7 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     private var onboardingJob: Job? = null
     private var indexingPreferenceJob: Job? = null
+    private var searchPreferenceJob: Job? = null
     private var assets = emptyList<MediaAsset>()
     private var queryVector: FloatArray? = null
     private var searchJob: Job? = null
@@ -51,6 +52,11 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
     private val localizedContext get() = AppLanguage.localizedContext(getApplication())
 
     init {
+        viewModelScope.launch {
+            graph.searchPreferences.threshold.collect { threshold ->
+                applySearchThreshold(threshold)
+            }
+        }
         viewModelScope.launch {
             graph.indexingPreferences.videoOcrEnabled.collect { enabled ->
                 mutableState.update { it.copy(videoOcrEnabled = enabled) }
@@ -187,6 +193,26 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
         }
     }
 
+    fun setSearchThreshold(value: Float) {
+        if (searchPreferenceJob?.isActive == true) return
+        searchPreferenceJob = viewModelScope.launch {
+            mutableState.update { it.copy(isSavingSearchThreshold = true) }
+            try {
+                graph.searchPreferences.setThreshold(value)
+                applySearchThreshold(HybridSearch.normalizeThreshold(value))
+            }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { showError(R.string.ui_search_threshold_save_failed) }
+            finally { mutableState.update { it.copy(isSavingSearchThreshold = false) } }
+        }
+    }
+
+    private fun applySearchThreshold(threshold: Float) {
+        if (state.value.searchThreshold == threshold) return
+        mutableState.update { it.copy(searchThreshold = threshold) }
+        search(debounce = false)
+    }
+
     fun downloadModel() { installModel { graph.models.downloadOfficial() } }
     fun importModel(uri: Uri) { installModel { graph.models.importModel(uri) } }
     fun cancelModelDownload() { modelJob?.cancel() }
@@ -269,7 +295,8 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
         val query = queryVector
         val result = withContext(Dispatchers.Default) {
             HybridSearch.search(current.query, query, currentAssets, graph.dao.segments(),
-                SearchScope.valueOf(current.filter.name), ModelManager.MODEL_ID).map { hit ->
+                SearchScope.valueOf(current.filter.name), ModelManager.MODEL_ID,
+                semanticThreshold = current.searchThreshold).map { hit ->
                 val segment = hit.segment
                 val match = runtimeText(when (segment?.modality) {
                     IndexModality.TEXT -> if (hit.exactMatch) RuntimeMessage.MATCH_TEXT_EXACT else RuntimeMessage.MATCH_TEXT_SEMANTIC
@@ -325,7 +352,8 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
     private fun updateWorkPresentation() {
         val active = lastWork.firstOrNull { !it.state.isFinished }
         if (active != null) observedWorkId = active.id
-        val latest = lastWork.firstOrNull { it.id == observedWorkId }
+        // A fresh process has no observed ID, but WorkManager still retains the last outcome.
+        val latest = lastWork.firstOrNull { it.id == observedWorkId } ?: lastWork.firstOrNull()
         val message = when {
             // A system interruption can leave the previous running message in progress data.
             active?.state == WorkInfo.State.ENQUEUED -> runtimeText(RuntimeMessage.INDEX_WAITING).render(localizedContext)
@@ -343,12 +371,24 @@ class PhotosViewModel(application: Application, private val savedState: SavedSta
             latest?.state == WorkInfo.State.CANCELLED -> runtimeText(RuntimeMessage.INDEX_CANCELLED).render(localizedContext)
             latest?.state == WorkInfo.State.SUCCEEDED -> {
                 val failed = latest.outputData.getInt("failed", 0)
-                if (failed > 0) runtimeText(RuntimeMessage.INDEX_PARTIAL, failed).render(localizedContext)
+                if (failed > 0) withIndexFailureDetail(
+                    runtimeText(RuntimeMessage.INDEX_PARTIAL, failed).render(localizedContext),
+                    latest.outputData.getString("error"),
+                )
                 else runtimeText(RuntimeMessage.INDEX_COMPLETE).render(localizedContext)
             }
             else -> runtimeText(RuntimeMessage.INDEX_IDLE).render(localizedContext)
         }
-        mutableState.update { it.copy(isIndexing = active != null, indexStatus = message) }
+        val status = if (active != null) withIndexFailureDetail(message, active.progress.getString("error")) else message
+        mutableState.update { it.copy(isIndexing = active != null, indexStatus = status) }
+    }
+
+    private fun withIndexFailureDetail(summary: String, storedError: String?): String {
+        // Keep the latest stage/cause actionable without filling the card with every failed item.
+        // Read the stored message again on language changes instead of retaining translated text.
+        val latestError = storedError?.lineSequence()?.lastOrNull { it.isNotBlank() } ?: return summary
+        val detail = RuntimeText.renderStored(latestError, localizedContext, RuntimeMessage.MEDIA_FAILED)
+        return "$summary\n$detail"
     }
 
     private fun updateIndexedCount() {

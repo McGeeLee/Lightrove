@@ -83,6 +83,8 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -93,6 +95,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -108,6 +111,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -557,6 +563,7 @@ private fun SettingsScreen(state: PhotosUiState, actions: PhotosActions) {
             Text(stringResource(R.string.ui_settings_title), style = MaterialTheme.typography.headlineMedium)
         }
         item { LanguageSettings(state.appLanguageTag, actions.openAppLanguageSettings) }
+        item { SearchThresholdSettings(state, actions.searchThresholdChanged) }
         item {
             Surface(
                 onClick = actions.showOnboarding,
@@ -631,6 +638,36 @@ private fun AccessSettings(actions: PhotosActions) {
                     Text(stringResource(R.string.ui_open_system_settings))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SearchThresholdSettings(state: PhotosUiState, onChanged: (Float) -> Unit) {
+    val sliderState = rememberSliderState(value = state.searchThreshold, steps = 19, trackRange = 0f..1f)
+    LaunchedEffect(state.searchThreshold, state.isSavingSearchThreshold) {
+        if (!state.isSavingSearchThreshold) sliderState.value = state.searchThreshold
+    }
+    val label = stringResource(R.string.ui_search_threshold_title)
+    val thresholdLabel = stringResource(R.string.ui_search_threshold_value, sliderState.value)
+    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+        Column(Modifier.fillMaxWidth().testTag("search_threshold_setting").padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(label, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                Text(thresholdLabel,
+                    style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            }
+            Slider(
+                state = sliderState,
+                onValueChange = { sliderState.value = it },
+                onValueChangeFinished = { onChanged(sliderState.value) },
+                enabled = !state.isSavingSearchThreshold,
+                modifier = Modifier.fillMaxWidth().testTag("search_threshold_slider")
+                    .semantics { contentDescription = label; stateDescription = thresholdLabel },
+            )
+            Text(stringResource(R.string.ui_search_threshold_hint), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

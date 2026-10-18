@@ -1,0 +1,51 @@
+Signed release 0.3.1 / versionCode 4; model absent; video OCR enabled.
+Synthetic library: 5 images + 1 video; first/update runs completed without retries.
+Repeat indexing OCR bitmap calls: 0
+I/WM-WorkerWrapper(15373): Worker result SUCCESS for Work [ id=177bba15-4356-45da-b0fd-64b7c242c03b, class=com.mcgeelee.photos.indexing.LibraryIndexWorker, tags={ com.mcgeelee.photos.indexing.LibraryIndexWorker } ]
+I/WM-WorkerWrapper(15373): Worker result SUCCESS for Work [ id=7e586ffa-27c0-448b-acf0-87066f84e971, class=com.mcgeelee.photos.indexing.IndexStorageWorker, tags={ com.mcgeelee.photos.indexing.IndexStorageWorker } ]
+
+Repeated-run UI:
+Video text recognition [116,462][790,511] com.mcgeelee.photos
+Applies to the next indexing run. Turn off to reduce processing time and storage. [116,549][964,650] com.mcgeelee.photos
+EmbeddingGemma 2 [294,853][954,921] com.mcgeelee.photos
+Add scene and sound search [126,992][669,1041] com.mcgeelee.photos
+About 485 MB · On device · OCR works without it [126,1078][900,1121] com.mcgeelee.photos
+Download model [257,1195][524,1248] com.mcgeelee.photos
+Import from file [257,1321][508,1374] com.mcgeelee.photos
+Model source and terms [126,1484][515,1537] com.mcgeelee.photos
+Update index [211,1742][458,1791] com.mcgeelee.photos
+Indexing complete [211,1791][462,1828] com.mcgeelee.photos
+OCR text search works without the model. [116,1860][790,1903] com.mcgeelee.photos
+Update index [179,1972][388,2025] com.mcgeelee.photos
+Lightrove [174,182][796,250] com.mcgeelee.photos
+On device [822,190][875,243] com.mcgeelee.photos
+Settings [933,185][996,248] com.mcgeelee.photos
+Search [124,2250][221,2298] com.mcgeelee.photos
+Library [492,2250][588,2298] com.mcgeelee.photos
+Settings [849,2250][964,2298] com.mcgeelee.photos
+
+Final release BLUE query:
+Find your memories [53,311][561,379] com.mcgeelee.photos
+BLUE [53,411][1027,564] com.mcgeelee.photos
+Clear search [933,457][996,520] com.mcgeelee.photos
+All [137,627][179,670] com.mcgeelee.photos
+Images [284,627][402,670] com.mcgeelee.photos
+Videos [507,627][617,670] com.mcgeelee.photos
+Text [722,627][792,670] com.mcgeelee.photos
+Audio [897,627][990,670] com.mcgeelee.photos
+Use image [153,769][322,822] com.mcgeelee.photos
+Use sound [475,769][645,822] com.mcgeelee.photos
+1 result [53,900][195,949] com.mcgeelee.photos
+codex_test_scenes.mp4 [53,970][524,1432] com.mcgeelee.photos
+0:12 [420,1353][480,1395] com.mcgeelee.photos
+Match at 0:05 [103,1009][292,1051] com.mcgeelee.photos
+Text match [85,1464][238,1506] com.mcgeelee.photos
+codex_test_scenes.mp4 [85,1517][471,1560] com.mcgeelee.photos
+CODEX TEST VIDEO
+BLUE SQUARE 2026 [85,1571][360,1656] com.mcgeelee.photos
+Lightrove [174,182][796,250] com.mcgeelee.photos
+On device [822,190][875,243] com.mcgeelee.photos
+Settings [933,185][996,248] com.mcgeelee.photos
+Search [124,2250][221,2298] com.mcgeelee.photos
+Library [492,2250][588,2298] com.mcgeelee.photos
+Settings [849,2250][964,2298] com.mcgeelee.photos

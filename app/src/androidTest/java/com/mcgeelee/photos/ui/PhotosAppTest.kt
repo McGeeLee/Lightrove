@@ -106,6 +106,66 @@ class PhotosAppTest {
         compose.runOnIdle { assertEquals("coffee", state.query); assertEquals(SearchFilter.TEXT, state.filter) }
     }
 
+    @Test fun relevanceSliderSavesOnCompletionAndReflectsTheSavedValue() {
+        var state by mutableStateOf(PhotosUiState())
+        val changes = mutableListOf<Float>()
+        val context = show {
+            PhotosApp(state, PhotosActions(searchThresholdChanged = {
+                changes += it
+                state = state.copy(searchThreshold = it)
+            }))
+        }
+        compose.onNodeWithTag("open_settings").performClick()
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("search_threshold_slider"))
+        compose.onNodeWithTag("search_threshold_slider")
+            .assertContentDescriptionEquals(context.getString(R.string.ui_search_threshold_title))
+            .performSemanticsAction(SemanticsActions.SetProgress) { it(.75f) }
+        compose.runOnIdle {
+            assertEquals(listOf(.75f), changes)
+            assertEquals(.75f, state.searchThreshold, 0f)
+        }
+        compose.onNodeWithText(context.getString(R.string.ui_search_threshold_value, .75f)).assertIsDisplayed()
+        compose.runOnIdle { state = state.copy(isSavingSearchThreshold = true) }
+        compose.onNodeWithTag("search_threshold_slider").assertIsNotEnabled()
+    }
+
+    @Test fun failedThresholdSaveRestoresTheSavedSliderPosition() {
+        var state by mutableStateOf(PhotosUiState())
+        show {
+            PhotosApp(state, PhotosActions(searchThresholdChanged = {
+                state = state.copy(isSavingSearchThreshold = true)
+            }))
+        }
+        compose.onNodeWithTag("open_settings").performClick()
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("search_threshold_slider"))
+        compose.onNodeWithTag("search_threshold_slider")
+            .performSemanticsAction(SemanticsActions.SetProgress) { it(.8f) }
+        compose.onNodeWithTag("search_threshold_slider").assertIsNotEnabled()
+        compose.runOnIdle { state = state.copy(isSavingSearchThreshold = false) }
+        compose.onNodeWithTag("search_threshold_slider").assertIsEnabled()
+        assertEquals(.45f, compose.onNodeWithTag("search_threshold_slider")
+            .fetchSemanticsNode().config[SemanticsProperties.ProgressBarRangeInfo].current, 0f)
+    }
+
+    @Test fun englishThresholdSettingWrapsAtLargeFontSize() = checkThresholdLargeText("en")
+    @Test fun chineseThresholdSettingWrapsAtLargeFontSize() = checkThresholdLargeText("zh-CN")
+    @Test fun hindiThresholdSettingWrapsAtLargeFontSize() = checkThresholdLargeText("hi")
+
+    private fun checkThresholdLargeText(language: String) = withFailureDiagnostics("threshold-large-$language") {
+        val context = show(language, 1.8f) { PhotosApp(PhotosUiState(), PhotosActions()) }
+        compose.onNodeWithTag("open_settings").performClick()
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("search_threshold_setting"))
+        compose.onNodeWithTag("search_threshold_slider").assertIsDisplayed().assertIsEnabled()
+        listOf(R.string.ui_search_threshold_title, R.string.ui_search_threshold_hint).forEach { resource ->
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithText(context.getString(resource), useUnmergedTree = true)
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertTrue("The relevance setting must expose its text layout", layouts.isNotEmpty())
+            assertTextFitsVisibleBounds(layouts,
+                "The full $language relevance setting must remain readable\n${describeLayouts(layouts)}")
+        }
+    }
+
     @Test fun modelDownloadAndImportRequireExplicitUserActions() {
         var downloads = 0
         var imports = 0

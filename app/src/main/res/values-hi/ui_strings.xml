@@ -94,4 +94,7 @@
         <item quantity="one">%1$d आइटम</item>
         <item quantity="other">%1$d आइटम</item>
     </plurals>
+    <string name="ui_search_threshold_title">प्रासंगिकता सीमा</string>
+    <string name="ui_search_threshold_hint">सीमा बढ़ाने पर अर्थ के आधार पर मिलने वाले परिणाम कम होते हैं।</string>
+    <string name="ui_search_threshold_save_failed">खोज की सीमा सेव नहीं हो सकी।</string>
 </resources>

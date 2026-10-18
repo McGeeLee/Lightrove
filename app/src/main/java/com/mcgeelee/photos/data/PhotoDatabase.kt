@@ -153,7 +153,7 @@ abstract class PhotoDao {
         val retained = if (sameSource) segments(source.uri).mapNotNull { segment ->
             when {
                 reusable && segment.modelId == modelId -> segment
-                segment.modality == IndexModality.TEXT && segment.text.isNotBlank() -> {
+                segment.modality == IndexModality.TEXT && (segment.text.isNotBlank() || segment.ocrScripts != 0) -> {
                     // OCR is still useful while switching models; its old semantic vector is not.
                     segment.copy(vector = null, modelId = modelId).also(retaggedText::add)
                 }
@@ -163,7 +163,9 @@ abstract class PhotoDao {
         // Commit these with the claim so even cancellation before the first checkpoint keeps OCR.
         upsertSegments(retaggedText)
         upsertIndexRecord(IndexRecord(source.uri, IndexState.PROCESSING, source.dateModified, modelId = modelId,
-            videoOcrEnabled = videoOcrEnabled))
+            videoOcrEnabled = videoOcrEnabled,
+            audioComplete = reusable && previous?.audioComplete == true,
+            audioResumeMs = if (reusable) previous?.audioResumeMs ?: 0 else 0))
         return IndexClaim(previous, retained)
     }
 
@@ -211,8 +213,12 @@ abstract class PhotoDao {
         changedSegments: List<IndexedSegment> = segments,
         removedKeys: List<Pair<IndexModality, Long>> = emptyList(),
         videoOcrEnabled: Boolean = true,
+        audioComplete: Boolean = false,
+        audioResumeMs: Long = 0,
+        error: String? = null,
     ): Boolean {
-        require(state == IndexState.PROCESSING || state == IndexState.PENDING)
+        require(state == IndexState.PROCESSING || state == IndexState.PENDING || state == IndexState.FAILED)
+        require(audioResumeMs >= 0)
         val current = asset(source.uri) ?: return false
         if (!current.sameSourceAs(source)) return false
         val record = indexRecord(source.uri) ?: return false
@@ -226,7 +232,8 @@ abstract class PhotoDao {
         removedKeys.forEach { (modality, time) -> deleteSegment(source.uri, modality, time) }
         upsertSegments(changedSegments)
         setOcrText(source.uri, segments.ocrText())
-        upsertIndexRecord(record.copy(state = state, updatedAt = System.currentTimeMillis(), error = null))
+        upsertIndexRecord(record.copy(state = state, updatedAt = System.currentTimeMillis(), error = error,
+            audioComplete = audioComplete, audioResumeMs = audioResumeMs))
         return true
     }
 
@@ -237,10 +244,16 @@ abstract class PhotoDao {
         segments: List<IndexedSegment>,
         modelId: String = "",
         videoOcrEnabled: Boolean = true,
+        audioComplete: Boolean = false,
+        audioResumeMs: Long = 0,
     ): Boolean {
         val current = asset(source.uri) ?: return false
         if (!current.sameSourceAs(source)) return false
-        if (source.isVideo && indexRecord(source.uri)?.let { it.videoOcrEnabled != videoOcrEnabled } == true) return false
+        val record = indexRecord(source.uri)
+        if (record != null &&
+            (record.modelId != modelId || record.sourceModified != source.dateModified)) return false
+        if (source.isVideo && record?.let { it.videoOcrEnabled != videoOcrEnabled } == true) return false
+        require(audioResumeMs >= 0)
         require(segments.all { it.assetUri == source.uri })
         deleteSegments(source.uri)
         upsertSegments(segments)
@@ -251,6 +264,8 @@ abstract class PhotoDao {
             sourceModified = source.dateModified,
             modelId = modelId,
             videoOcrEnabled = videoOcrEnabled,
+            audioComplete = audioComplete,
+            audioResumeMs = audioResumeMs,
         ))
         return true
     }
@@ -268,7 +283,7 @@ private fun List<IndexedSegment>.ocrText(): String = asSequence()
 
 @Database(
     entities = [MediaAsset::class, IndexedSegment::class, IndexRecord::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(IndexConverters::class)
@@ -284,12 +299,26 @@ abstract class PhotoDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE indexed_segments ADD COLUMN ocrScripts INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE index_records ADD COLUMN audioComplete INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE index_records ADD COLUMN audioResumeMs INTEGER NOT NULL DEFAULT 0")
+                // Only READY proves the old pipeline finished. Interrupted/failed rows remain resumable.
+                db.execSQL("""UPDATE indexed_segments SET ocrScripts = 31 WHERE modality = 'TEXT'
+                    AND assetUri IN (SELECT assetUri FROM index_records WHERE state = 'READY')""")
+                db.execSQL("""UPDATE index_records SET audioComplete = 1 WHERE state = 'READY'
+                    AND modelId != 'mlkit-five-scripts-v2' AND assetUri IN
+                    (SELECT uri FROM media_assets WHERE isVideo = 1)""")
+            }
+        }
+
         fun create(context: Context): PhotoDatabase = instance ?: synchronized(this) {
             instance ?: Room.databaseBuilder(
                 context.applicationContext,
                 PhotoDatabase::class.java,
                 "photos-index.db",
-            ).addMigrations(MIGRATION_1_2).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { instance = it }
         }
     }
 }

@@ -91,4 +91,7 @@
     <plurals name="ui_item_count">
         <item quantity="other">%1$d개</item>
     </plurals>
+    <string name="ui_search_threshold_title">관련성 기준</string>
+    <string name="ui_search_threshold_hint">값을 높이면 의미 기반 검색 결과가 줄어듭니다.</string>
+    <string name="ui_search_threshold_save_failed">검색 기준을 저장하지 못했습니다.</string>
 </resources>

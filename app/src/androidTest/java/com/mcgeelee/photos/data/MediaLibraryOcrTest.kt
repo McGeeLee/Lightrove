@@ -111,6 +111,21 @@ class MediaLibraryOcrTest {
         assertTrue("Hindi family text missing: $text", text.contains("परिवार"))
     }
 
+    @Test fun retryRecognizesOnlyTheRequestedMissingKoreanScript() = runBlocking {
+        val uri = importFixture("codex_test_korean.png", "image/png")
+        val library = MediaLibrary(context)
+        val bitmap = requireNotNull(library.imageBitmap(uri, 2048))
+        try {
+            OcrIndexer(context, library).use { ocr ->
+                val result = ocr.recognizeDetailed(bitmap, setOf(OcrScript.KOREAN))
+                assertEquals(setOf(OcrScript.KOREAN), result.successfulScripts)
+                assertTrue("Unexpected retry failures: ${result.failures}", result.failures.isEmpty())
+                assertTrue("Korean location text missing: ${result.text}", result.text.contains("서울"))
+                assertTrue("Korean family text missing: ${result.text}", result.text.contains("가족 사진"))
+            }
+        } finally { bitmap.recycle() }
+    }
+
     private suspend fun recognizeBundledScriptFixture(name: String): String {
         val uri = importFixture(name, "image/png")
         val library = MediaLibrary(context)
@@ -146,6 +161,45 @@ class MediaLibraryOcrTest {
                 abs(chunk.samples.size - (chunk.endMs - chunk.startMs) * 16) <= 16)
             assertTrue(chunk.samples.all { it.isFinite() && it in -1f..1f })
             assertTrue("The fixture's audible tone must survive decoding", chunk.samples.any { abs(it) > .02f })
+        }
+    }
+
+    @Test fun audioResumeReplaysLastCompletedWindowWithoutLeavingATimestampGap() = runBlocking {
+        val uri = importFixture("codex_test_scenes.mp4", "video/mp4")
+        val decoder = AudioDecoder(context)
+        val baseline = mutableListOf<AudioChunk>()
+        decoder.decode(uri) { baseline += it }
+        assertEquals(2, baseline.size)
+        for (completedIndex in baseline.indices) {
+            // Persist the last completed window's start, retaining its overlap on restart.
+            val resumeMs = baseline[completedIndex].startMs
+            val resumed = mutableListOf<AudioChunk>()
+            val count = decoder.decode(uri, startMs = resumeMs) { resumed += it }
+            val expected = baseline.drop(completedIndex)
+            assertEquals("Resume from $resumeMs must replay the completed window", expected.size, count)
+            assertEquals(expected.size, resumed.size)
+            expected.zip(resumed).forEach { (original, replayed) ->
+                assertTrue("Window start drift at $resumeMs: ${original.startMs} vs ${replayed.startMs}", abs(original.startMs - replayed.startMs) <= 1)
+                assertTrue("Window end drift at $resumeMs", abs(original.endMs - replayed.endMs) <= 1)
+                assertTrue("Resume lost audio samples at $resumeMs", abs(original.samples.size - replayed.samples.size) <= 16)
+                assertTrue("Resumed waveform differs at $resumeMs",
+                    alignedWaveformError(original.samples, replayed.samples) < .005)
+            }
+            resumed.zipWithNext().forEach { (previous, next) ->
+                assertTrue("Resume lost the one-second overlap", abs(previous.endMs - next.startMs - 1000) <= 1)
+            }
+            if (completedIndex > 0) assertTrue("Resume must overlap audio completed before cancellation",
+                baseline[completedIndex - 1].endMs - resumed.first().startMs >= 999)
+        }
+    }
+
+    private fun alignedWaveformError(original: FloatArray, resumed: FloatArray): Double {
+        // AAC seeking restarts decoder overlap state; compare after 128 ms of warmup.
+        // Millisecond checkpoint timestamps can shift a 16 kHz sample grid by at most 16 samples.
+        val end = minOf(original.size, resumed.size) - 16
+        assertTrue("Fixture must retain enough audio to compare", end > 2048)
+        return (-16..16).minOf { offset ->
+            (2048 until end step 16).map { index -> abs(original[index] - resumed[index + offset]).toDouble() }.average()
         }
     }
 

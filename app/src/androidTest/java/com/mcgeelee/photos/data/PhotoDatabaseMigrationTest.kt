@@ -17,7 +17,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PhotoDatabaseMigrationTest {
-    @Test fun versionOneKeepsLegacyVectorsAndTracksVideoOcrWithoutReindexingImages() = runBlocking {
+    @Test fun versionOneToThreeKeepsLegacyVectorsAndTracksVideoOcrWithoutReindexingImages() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val name = "migration-${System.nanoTime()}.db"
         val photo = MediaAsset("content://test/photo", 1, "photo", "image/jpeg", 10, 1000, 0, 100, 100, "", false)
@@ -42,11 +42,13 @@ class PhotoDatabaseMigrationTest {
             legacy.version = 1
         }
         val database = Room.databaseBuilder(context, PhotoDatabase::class.java, name)
-            .addMigrations(PhotoDatabase.MIGRATION_1_2).build()
+            .addMigrations(PhotoDatabase.MIGRATION_1_2, PhotoDatabase.MIGRATION_2_3).build()
         try {
             val dao = database.dao()
             assertEquals(2, dao.assets().size)
             assertTrue(requireNotNull(dao.indexRecord(video.uri)).videoOcrEnabled)
+            assertTrue(requireNotNull(dao.indexRecord(video.uri)).audioComplete)
+            assertFalse(requireNotNull(dao.indexRecord(photo.uri)).audioComplete)
             assertArrayEquals(vector, dao.segments(photo.uri).single().vector, 0f)
             assertEquals(2, dao.indexingPlan("current", videoOcrEnabled = true).ready)
 
@@ -78,6 +80,82 @@ class PhotoDatabaseMigrationTest {
             database.close()
             context.deleteDatabase(name)
         }
+    }
+
+    @Test fun versionTwoToThreeMarksOnlyReadyOcrAndCompletedSemanticVideoAudio() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val name = "migration-v2-${System.nanoTime()}.db"
+        val vector = floatArrayOf(0.25f, -0.5f, 1f)
+        val legacyVector = ByteBuffer.allocate(vector.size * 4).order(ByteOrder.LITTLE_ENDIAN)
+            .apply { vector.forEach(::putFloat) }.array()
+        val cases = listOf(
+            LegacyCase("ready-video", IndexState.READY, isVideo = true, modelId = "current", videoOcrEnabled = true),
+            LegacyCase("ready-ocr-video", IndexState.READY, isVideo = true, modelId = "mlkit-five-scripts-v2", videoOcrEnabled = true),
+            LegacyCase("ready-photo", IndexState.READY, isVideo = false, modelId = "current", videoOcrEnabled = true),
+            LegacyCase("failed-video", IndexState.FAILED, isVideo = true, modelId = "current", videoOcrEnabled = true),
+            LegacyCase("pending-video", IndexState.PENDING, isVideo = true, modelId = "current", videoOcrEnabled = false),
+            LegacyCase("processing-video", IndexState.PROCESSING, isVideo = true, modelId = "current", videoOcrEnabled = true),
+        )
+        context.getDatabasePath(name).parentFile?.mkdirs()
+        SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(name), null).use { legacy ->
+            createVersionOne(legacy)
+            legacy.execSQL("ALTER TABLE index_records ADD COLUMN videoOcrEnabled INTEGER NOT NULL DEFAULT 1")
+            cases.forEachIndexed { index, case ->
+                legacy.execSQL("INSERT INTO media_assets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    arrayOf<Any?>(case.uri, index.toLong(), case.name, if (case.isVideo) "video/mp4" else "image/jpeg",
+                        10L, 1000L, if (case.isVideo) 25_000L else 0L, 100, 100, "", if (case.isVideo) 1 else 0, "", 4096L))
+                legacy.execSQL("INSERT INTO index_records VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    arrayOf<Any?>(case.uri, case.state.name, 10L, 123L,
+                        if (case.state == IndexState.FAILED) "retry me" else null, case.modelId, if (case.videoOcrEnabled) 1 else 0))
+                // Blank OCR is a valid completed result; migration must preserve its marker too.
+                legacy.execSQL("INSERT INTO indexed_segments VALUES (?, ?, ?, ?, ?, ?)",
+                    arrayOf<Any?>(case.uri, "TEXT", if (case.isVideo) 0L else -1L, "", null, case.modelId))
+                legacy.execSQL("INSERT INTO indexed_segments VALUES (?, ?, ?, ?, ?, ?)",
+                    arrayOf<Any?>(case.uri, if (case.isVideo) "VIDEO" else "IMAGE",
+                        if (case.isVideo) 0L else -1L, "", legacyVector, case.modelId))
+            }
+            legacy.version = 2
+        }
+        val database = Room.databaseBuilder(context, PhotoDatabase::class.java, name)
+            .addMigrations(PhotoDatabase.MIGRATION_1_2, PhotoDatabase.MIGRATION_2_3).build()
+        try {
+            val dao = database.dao()
+            assertEquals(6, dao.assets().size)
+            for (case in cases) {
+                val record = requireNotNull(dao.indexRecord(case.uri))
+                assertEquals(case.state, record.state)
+                assertEquals(case.modelId, record.modelId)
+                assertEquals(case.videoOcrEnabled, record.videoOcrEnabled)
+                assertEquals(123L, record.updatedAt)
+                assertEquals(if (case.state == IndexState.FAILED) "retry me" else null, record.error)
+                assertEquals(case.state == IndexState.READY && case.isVideo && case.modelId != "mlkit-five-scripts-v2",
+                    record.audioComplete)
+                assertEquals(0L, record.audioResumeMs)
+
+                val segments = dao.segments(case.uri)
+                assertEquals(2, segments.size)
+                val ocr = segments.single { it.modality == IndexModality.TEXT }
+                assertEquals(if (case.state == IndexState.READY) 31 else 0, ocr.ocrScripts)
+                assertEquals("", ocr.text)
+                assertNull(ocr.vector)
+                val visual = segments.single { it.modality != IndexModality.TEXT }
+                assertEquals(0, visual.ocrScripts)
+                assertArrayEquals(vector, visual.vector, 0f)
+            }
+        } finally {
+            database.close()
+            context.deleteDatabase(name)
+        }
+    }
+
+    private data class LegacyCase(
+        val name: String,
+        val state: IndexState,
+        val isVideo: Boolean,
+        val modelId: String,
+        val videoOcrEnabled: Boolean,
+    ) {
+        val uri: String get() = "content://test/$name"
     }
 
     /** Frozen v1 DDL: opening this file through Room exercises schema validation and the actual migration. */

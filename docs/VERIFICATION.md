@@ -1,5 +1,22 @@
 # 验证记录
 
+日期：2026-10-18（Asia/Singapore）。当前版本：**0.3.1**（versionCode 4）。验证设备为本任务独立 Android 17 / API 37 arm64 模拟器。
+
+## OCR 发布修复、阶段续建与相关性阈值
+
+- 旧正式 APK 的 DEX 中，三个 ML Kit 组件注册器有类名但缺失 public 无参构造方法，Firebase 反射加载失败后 OCR 组件为空。增加精确的构造方法保留规则；[Android R8 文档](https://developer.android.com/topic/performance/app-optimization/full-mode#retain-the-default-constructor) 说明 full mode 对反射构造方法的显式保留要求。新普通 Release APK 的 DEX 检查通过，且 CI 的发布阶段现在执行相同检查。
+- JVM：51 项通过；发布辅助脚本：24 项通过。Debug 构建与 lint 通过，lint 0 errors、24 warnings（既有 API/资源建议及新版依赖提示等）。正式签名 APK / AAB 构建成功。
+- Android 首轮 53 项全部通过：Room 迁移和断点数据、阈值持久化、英文/中文/印地文大字体滑块、原有 UI 行为、真实五文字体系 OCR 与反射注册器验证。
+- 后续 14 项针对最终修改验证，发现 AAC 直接定位断点会偏移窗口起点；增加 1 秒预解码并在目标时间裁剪。音频两项复测全部通过（连续解码与断点恢复的时间戳、样本量、波形及重叠检查）。其他 13 项通过，包括单文字体系 OCR 重试及新版 M3 SliderState。合计覆盖 61 个不同 Android 测试，发现的失败已修复并复测。
+- Room 1/2 → 3 保留向量与 OCR；只有旧 READY 记录可推定已完成。FAILED/PENDING/PROCESSING 不会凭空标记音轨完成。空 OCR 结果、成功文字体系掩码、音轨完成状态和连续音频恢复位置持久化；模型变化清除旧音频进度但保留 OCR。文件变更、撤权与过期写入保护验证通过。
+- 音频恢复会重放最后一个已完成窗口以保留重叠，不保证完全零解码；旧版本未记录的空 OCR/静音阶段，升级后首次重试可能需要补做。
+- 设置中的原生相关性滑块默认 0.45、范围 0–1、步长 0.05；保存后复用查询向量刷新结果。文字直接命中保留，语义匹配按阈值过滤后依旧按相关性降序。该数值不是置信概率，本次未声称完成大型图库质量评测。
+- 签名沿用发布公钥，APK/AAB 校验通过：`69bebcec726f3864e0be9619dd0cc4b94f8f4ce3ef647615269ffb1fb686c3c7`。本地验证产物位于 `dist/0.3.1/`；GitHub Release 由发布工作流独立构建并验证。
+- 最终正式签名包实际运行：独立模拟器中使用 5 张自制文字图片与 1 个 12 秒测试视频（无语义模型，测试随包 OCR）。覆盖安装保留已完成索引，开启视频 OCR 后仅补建新图与视频文字；完成后再次 Update index，WorkManager 返回 SUCCESS，清空后采集的日志中 `Start process bitmap` 为 **0 次**。搜索 `BLUE` 只返回测试视频，命中 **0:05**。这验证的是正式包 OCR/索引流程，不将其宣称为多模态检索质量基准。
+- 阈值界面截图：`screenshots/search-threshold-en.png`，正式包视频命中截图：`screenshots/release-video-ocr-en.png`。构建、设备与签名日志见 `verification-logs/retry-threshold-*`。
+
+## 历史验证
+
 日期：2026-10-17（Asia/Singapore）。当前版本：**0.3.0**（versionCode 3）。设备：Android 17 / API 37 arm64-v8a 模拟器，1080 × 2400。
 
 ## 后台增量索引、存储压缩与视频 OCR 开关（本次修改）

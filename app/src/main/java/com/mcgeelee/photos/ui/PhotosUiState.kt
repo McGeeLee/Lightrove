@@ -2,6 +2,7 @@ package com.mcgeelee.photos.ui
 
 import androidx.annotation.StringRes
 import com.mcgeelee.photos.R
+import com.mcgeelee.photos.search.HybridSearch
 
 /** Presentation models deliberately contain no database or inference implementation details. */
 data class PhotosUiState(
@@ -17,6 +18,8 @@ data class PhotosUiState(
     val isIndexing: Boolean = false,
     val videoOcrEnabled: Boolean = false,
     val isSavingVideoOcrPreference: Boolean = false,
+    val searchThreshold: Float = HybridSearch.DEFAULT_THRESHOLD,
+    val isSavingSearchThreshold: Boolean = false,
     val indexedCount: Int = 0,
     val totalCount: Int = 0,
     val indexStatus: String = "",
@@ -61,6 +64,7 @@ data class PhotosActions(
     val startIndexing: () -> Unit = {},
     val cancelIndexing: () -> Unit = {},
     val videoOcrChanged: (Boolean) -> Unit = {},
+    val searchThresholdChanged: (Float) -> Unit = {},
     val downloadModel: () -> Unit = {},
     val importModel: () -> Unit = {},
     val cancelModelDownload: () -> Unit = {},

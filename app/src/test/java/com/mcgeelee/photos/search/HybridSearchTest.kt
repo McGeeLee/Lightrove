@@ -49,4 +49,42 @@ class HybridSearchTest {
         assertTrue(HybridSearch.search("不相关",floatArrayOf(1f,0f),listOf(a),
             listOf(segment(a,IndexModality.IMAGE,vector=floatArrayOf(0f,1f))),modelId="v1").isEmpty())
     }
+
+    @Test fun defaultThresholdExcludesWeakNeighborsWhileKeepingScoreOrder() {
+        val weak = asset(1); val strong = asset(2); val strongest = asset(3)
+        val results = HybridSearch.search("sunset", floatArrayOf(1f, 0f), listOf(weak, strong, strongest), listOf(
+            segment(weak, IndexModality.IMAGE, vector = floatArrayOf(.3f, .9539392f)),
+            segment(strong, IndexModality.IMAGE, vector = floatArrayOf(.6f, .8f)),
+            segment(strongest, IndexModality.IMAGE, vector = floatArrayOf(.8f, .6f))), modelId = "v1")
+        assertEquals(listOf(strongest.uri, strong.uri), results.map { it.asset.uri })
+    }
+
+    @Test fun raisingThresholdFiltersTextAndAttachmentQueriesWithoutDroppingExactText() {
+        val exact = asset(1); val neighbor = asset(2)
+        val assets = listOf(exact, neighbor)
+        val segments = listOf(
+            segment(exact, IndexModality.TEXT, "receipt AB-123", vector = floatArrayOf(0f, 1f)),
+            segment(neighbor, IndexModality.IMAGE, vector = floatArrayOf(.6f, .8f)))
+        assertEquals(2, HybridSearch.search("AB-123", floatArrayOf(1f, 0f), assets, segments,
+            modelId = "v1", semanticThreshold = .55f).size)
+        val strict = HybridSearch.search("AB-123", floatArrayOf(1f, 0f), assets, segments,
+            modelId = "v1", semanticThreshold = .75f)
+        assertEquals(exact.uri, strict.single().asset.uri)
+        assertTrue(strict.single().exactMatch)
+        assertEquals(neighbor.uri, HybridSearch.search("", floatArrayOf(1f, 0f), assets, segments,
+            modelId = "v1", semanticThreshold = .55f).single().asset.uri)
+        assertTrue(HybridSearch.search("", floatArrayOf(1f, 0f), assets, segments,
+            modelId = "v1", semanticThreshold = .75f).isEmpty())
+    }
+
+    @Test fun thresholdIsInclusiveAndInvalidValuesUseTheDefault() {
+        val a = asset(1)
+        val segments = listOf(segment(a, IndexModality.IMAGE, vector = floatArrayOf(.6f, .8f)))
+        assertEquals(1, HybridSearch.search("", floatArrayOf(1f, 0f), listOf(a), segments,
+            modelId = "v1", semanticThreshold = .6f).size)
+        assertEquals(HybridSearch.DEFAULT_THRESHOLD, HybridSearch.normalizeThreshold(Float.NaN), 0f)
+        assertEquals(HybridSearch.DEFAULT_THRESHOLD, HybridSearch.normalizeThreshold(Float.POSITIVE_INFINITY), 0f)
+        assertEquals(0f, HybridSearch.normalizeThreshold(-.2f), 0f)
+        assertEquals(1f, HybridSearch.normalizeThreshold(1.2f), 0f)
+    }
 }

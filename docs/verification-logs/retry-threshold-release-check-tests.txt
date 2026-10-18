@@ -1,0 +1,29 @@
+test_build_tools_37_actual_output_is_accepted (test_ci_release.ApkCertificateTest) ... ok
+test_legacy_format_is_accepted (test_ci_release.ApkCertificateTest) ... ok
+test_missing_or_multiple_signer_count_is_rejected (test_ci_release.ApkCertificateTest) ... ok
+test_public_key_and_source_stamp_cannot_substitute_for_signer (test_ci_release.ApkCertificateTest) ... ok
+test_same_certificate_in_multiple_schemes_is_accepted (test_ci_release.ApkCertificateTest) ... ok
+test_unrelated_stamp_certificate_is_ignored (test_ci_release.ApkCertificateTest) ... ok
+test_wrong_certificate_in_any_scheme_is_rejected (test_ci_release.ApkCertificateTest) ... ok
+test_class_and_init_strings_without_constructor_methods_are_rejected (test_ci_release.OcrRegistrarPackagingTest) ... ok
+test_duplicate_registrar_definitions_are_rejected (test_ci_release.OcrRegistrarPackagingTest) ... ok
+test_malformed_dex_offsets_sizes_and_integers_fail_closed (test_ci_release.OcrRegistrarPackagingTest) ... ok
+test_missing_dex_and_non_zip_apks_are_rejected (test_ci_release.OcrRegistrarPackagingTest) ... ok
+test_missing_registrar_class_is_rejected (test_ci_release.OcrRegistrarPackagingTest) ... ok
+test_private_parameterized_static_or_ordinary_methods_are_rejected (test_ci_release.OcrRegistrarPackagingTest) ... ok
+test_public_no_argument_constructors_across_dex_files_are_accepted (test_ci_release.OcrRegistrarPackagingTest) ... ok
+test_debuggable_and_test_only_are_rejected (test_ci_release.ReleaseManifestTest) ... ok
+test_explicit_false_and_absent_flags_are_allowed (test_ci_release.ReleaseManifestTest) ... ok
+test_existing_matching_tag_returns_exact_commit (test_ci_release.ReleaseTagTest) ... ok
+test_missing_tag_is_rejected (test_ci_release.ReleaseTagTest) ... ok
+test_moved_trigger_tag_is_rejected (test_ci_release.ReleaseTagTest) ... ok
+test_shell_or_output_injection_in_tag_is_rejected (test_ci_release.ReleaseTagTest) ... ok
+test_tag_outside_default_branch_is_rejected (test_ci_release.ReleaseTagTest) ... ok
+test_tag_version_mismatch_is_rejected (test_ci_release.ReleaseTagTest) ... ok
+test_invalid_base64_is_rejected (test_ci_release.SigningSecretTest) ... ok
+test_missing_secret_is_rejected_before_creating_file (test_ci_release.SigningSecretTest) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 3.139s
+
+OK

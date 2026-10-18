@@ -91,4 +91,7 @@
     <plurals name="ui_item_count">
         <item quantity="other">%1$d 件</item>
     </plurals>
+    <string name="ui_search_threshold_title">関連度のしきい値</string>
+    <string name="ui_search_threshold_hint">値を上げると、意味の近い検索結果が絞り込まれます。</string>
+    <string name="ui_search_threshold_save_failed">検索のしきい値を保存できませんでした。</string>
 </resources>

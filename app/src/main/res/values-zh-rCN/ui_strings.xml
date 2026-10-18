@@ -91,4 +91,7 @@
     <plurals name="ui_item_count">
         <item quantity="other">%1$d 项</item>
     </plurals>
+    <string name="ui_search_threshold_title">相关性阈值</string>
+    <string name="ui_search_threshold_hint">调高阈值可减少模糊匹配。</string>
+    <string name="ui_search_threshold_save_failed">无法保存搜索阈值。</string>
 </resources>

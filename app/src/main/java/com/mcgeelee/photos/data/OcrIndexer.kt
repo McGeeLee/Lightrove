@@ -47,7 +47,8 @@ class OcrIndexer(
     /** Compatibility API; detailed results also expose partial failures so indexing can retry. */
     suspend fun recognize(bitmap: Bitmap): String = recognizeDetailed(bitmap).text
 
-    suspend fun recognizeDetailed(bitmap: Bitmap): OcrRecognitionResult {
+    suspend fun recognizeDetailed(bitmap: Bitmap, scripts: Set<OcrScript> = OcrScript.entries.toSet()): OcrRecognitionResult {
+        require(scripts.isNotEmpty())
         currentCoroutineContext().ensureActive()
         synchronized(lifecycleLock) {
             check(!closeRequested) { localizedString(R.string.ocr_closed) }
@@ -57,7 +58,7 @@ class OcrIndexer(
             return recognitionMutex.withLock {
                 currentCoroutineContext().ensureActive()
                 val input = InputImage.fromBitmap(bitmap, 0)
-                val result = recognizeAllScripts(recognizers.map { slot ->
+                val result = recognizeAllScripts(recognizers.filter { it.script in scripts }.map { slot ->
                     OcrReader(slot.script) {
                         // ML Kit tasks are not cancellable. Wait for this one active read before
                         // allowing the caller to recycle its bitmap, then check cancellation.

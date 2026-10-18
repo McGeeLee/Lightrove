@@ -42,7 +42,10 @@ class AudioDecoder(context: Context) {
                 extractor.getTrackFormat(it).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true
             } ?: return@withContext 0
             extractor.selectTrack(audioTrack)
-            if (startUs > 0) extractor.seekTo(startUs, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
+            // A fresh AAC decoder needs preceding packets to rebuild its overlap/priming state.
+            // Seeking directly to the checkpoint can otherwise drop the beginning of that window
+            // and shift every subsequent segment key. Decode a short pre-roll, then trim PCM at startUs.
+            if (startUs > 0) extractor.seekTo((startUs - 1_000_000L).coerceAtLeast(0), MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
             val inputFormat = extractor.getTrackFormat(audioTrack)
             val mime = requireNotNull(inputFormat.getString(MediaFormat.KEY_MIME))
             val decoder = MediaCodec.createDecoderByType(mime)

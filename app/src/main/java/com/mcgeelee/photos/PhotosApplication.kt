@@ -9,6 +9,7 @@ import com.mcgeelee.photos.data.IndexingPreferences
 import com.mcgeelee.photos.data.MediaLibrary
 import com.mcgeelee.photos.data.OnboardingPreferences
 import com.mcgeelee.photos.data.PhotoDatabase
+import com.mcgeelee.photos.data.SearchPreferences
 import com.mcgeelee.photos.indexing.IndexStorageWorker
 import com.mcgeelee.photos.ml.AudioDecoder
 import com.mcgeelee.photos.ml.GemmaEmbeddingEngine
@@ -25,6 +26,7 @@ class PhotosApplication : Application(), SingletonImageLoader.Factory {
 class AppGraph(context: Context) {
     val onboarding = OnboardingPreferences(context)
     val indexingPreferences = IndexingPreferences(context)
+    val searchPreferences = SearchPreferences(context)
     val database = PhotoDatabase.create(context)
     val dao = database.dao()
     val library = MediaLibrary(context)

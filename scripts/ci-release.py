@@ -9,11 +9,18 @@ import os
 from pathlib import Path
 import re
 import shutil
+import struct
 import subprocess
 import sys
+from zipfile import BadZipFile, ZipFile
 
 
 VERSION = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?"
+OCR_REGISTRARS = frozenset({
+    "Lcom/google/mlkit/common/internal/CommonComponentRegistrar;",
+    "Lcom/google/mlkit/vision/common/internal/VisionCommonRegistrar;",
+    "Lcom/google/mlkit/vision/text/internal/TextRegistrar;",
+})
 
 
 def command(*args, cwd=None, data=None):
@@ -88,6 +95,121 @@ def check_apk_certificate(verification, expected):
         raise ValueError("APK signing certificate does not match signing/release-certificate.pem.")
 
 
+class _DexFile:
+    """Read only the DEX records needed to validate reflective OCR constructors."""
+
+    def __init__(self, data):
+        self.data = data
+        if len(data) < 112 or data[:8] not in tuple(f"dex\n{version:03}\0".encode() for version in range(35, 41)):
+            raise ValueError("Unsupported or malformed APK DEX header.")
+        if self.unpack("<III", 32) != (len(data), 112, 0x12345678):
+            raise ValueError("Malformed APK DEX size, header, or byte order.")
+        self.tables = {}
+        for name, position, width in (("strings", 56, 4), ("types", 64, 4), ("protos", 72, 12),
+                                      ("methods", 88, 8), ("classes", 96, 32)):
+            count, offset = self.unpack("<II", position)
+            if count and (offset < 112 or offset + count * width > len(data)):
+                raise ValueError(f"Malformed APK DEX {name} table.")
+            self.tables[name] = (count, offset, width)
+
+    def unpack(self, format, offset):
+        if offset < 0 or offset + struct.calcsize(format) > len(self.data):
+            raise ValueError("Truncated APK DEX record.")
+        return struct.unpack_from(format, self.data, offset)
+
+    def entry(self, table, index, format):
+        count, offset, width = self.tables[table]
+        if not 0 <= index < count:
+            raise ValueError(f"Invalid APK DEX {table} index.")
+        return self.unpack(format, offset + index * width)
+
+    def uleb(self, position):
+        value = 0
+        for shift in range(0, 35, 7):
+            part, = self.unpack("<B", position)
+            position += 1
+            if shift == 28 and part > 15:
+                raise ValueError("Malformed APK DEX integer.")
+            value |= (part & 127) << shift
+            if not part & 128:
+                return value, position
+        raise ValueError("Malformed APK DEX integer.")
+
+    def string(self, index):
+        position, = self.entry("strings", index, "<I")
+        _, position = self.uleb(position)
+        end = self.data.find(b"\0", position)
+        if end < 0:
+            raise ValueError("Unterminated APK DEX string.")
+        # The identifiers checked below are ASCII. Other DEX strings may use MUTF-8.
+        return self.data[position:end].decode("utf-8", errors="replace")
+
+    def type_name(self, index):
+        string_index, = self.entry("types", index, "<I")
+        return self.string(string_index)
+
+    def registrar_constructors(self):
+        found = {}
+        for index in range(self.tables["classes"][0]):
+            definition = self.entry("classes", index, "<8I")
+            name = self.type_name(definition[0])
+            if name not in OCR_REGISTRARS:
+                continue
+            if name in found:
+                raise ValueError("Duplicate OCR registrar class in APK DEX.")
+            found[name] = False
+            position = definition[6]
+            if not position:
+                continue
+            counts = []
+            for _ in range(4):
+                count, position = self.uleb(position)
+                counts.append(count)
+            if sum(counts) > len(self.data):
+                raise ValueError("Malformed APK DEX class member counts.")
+            for _ in range(counts[0] + counts[1]):
+                _, position = self.uleb(position)
+                _, position = self.uleb(position)
+            method_index = 0
+            for _ in range(counts[2]):
+                delta, position = self.uleb(position)
+                flags, position = self.uleb(position)
+                code, position = self.uleb(position)
+                method_index += delta
+                owner, proto, method_name = self.entry("methods", method_index, "<HHI")
+                _, return_type, parameters = self.entry("protos", proto, "<III")
+                no_arguments = parameters == 0 or self.unpack("<I", parameters)[0] == 0
+                # A retained class/name or private/parameterized constructor is insufficient.
+                public_class = definition[1] & 1 and not definition[1] & (0x200 | 0x400)
+                public_constructor = flags & 0x10001 == 0x10001 and not flags & 0x8
+                if (owner == definition[0] and public_class and public_constructor and code and
+                        self.string(method_name) == "<init>" and no_arguments and self.type_name(return_type) == "V"):
+                    found[name] = True
+        return found
+
+
+def check_apk_ocr_registrars(apk):
+    """Fail before publishing if R8 stripped constructors used by ML Kit discovery."""
+    found = {}
+    try:
+        with ZipFile(apk) as archive:
+            entries = [entry for entry in archive.infolist() if re.fullmatch(r"classes(?:[0-9]+)?\.dex", entry.filename)]
+            if not any(entry.filename == "classes.dex" for entry in entries):
+                raise ValueError("Release APK contains no classes.dex.")
+            if sum(entry.file_size for entry in entries) > 512 * 1024 * 1024:
+                raise ValueError("APK DEX contents exceed the release validation size limit.")
+            for entry in entries:
+                constructors = _DexFile(archive.read(entry)).registrar_constructors()
+                if found.keys() & constructors.keys():
+                    raise ValueError("Duplicate OCR registrar class across APK DEX files.")
+                found.update(constructors)
+    except BadZipFile as error:
+        raise ValueError("Malformed release APK ZIP contents.") from error
+    missing = sorted(name for name in OCR_REGISTRARS if not found.get(name))
+    if missing:
+        raise ValueError("Release APK is missing public no-argument OCR registrar constructors: " + ", ".join(missing))
+
+
 def stage(build_directory=Path("app/build")):
     version = os.environ["RELEASE_VERSION"]
     if not re.fullmatch(VERSION, version):
@@ -110,6 +232,7 @@ def stage(build_directory=Path("app/build")):
     check_apk_certificate(verification, expected)
     manifest = command(str(build_tools / "aapt2"), "dump", "xmltree", str(apk), "--file", "AndroidManifest.xml").decode()
     check_release_manifest(manifest)
+    check_apk_ocr_registrars(apk)
     # Using the expected keystore makes the self-signed app certificate trusted;
     # -strict still rejects unsigned entries, wrong aliases, and invalid signatures.
     command(

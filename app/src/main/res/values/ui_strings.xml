@@ -100,4 +100,8 @@
     <string name="ui_language_ja" translatable="false">日本語</string>
     <string name="ui_language_ko" translatable="false">한국어</string>
     <string name="ui_language_hi" translatable="false">हिन्दी</string>
+    <string name="ui_search_threshold_title">Relevance threshold</string>
+    <string name="ui_search_threshold_hint">Higher values show fewer semantic matches.</string>
+    <string name="ui_search_threshold_save_failed">Could not save the search threshold.</string>
+    <string name="ui_search_threshold_value" translatable="false">%1$.2f</string>
 </resources>

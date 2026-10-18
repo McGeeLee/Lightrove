@@ -6,6 +6,17 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class RuntimeTextTest {
+    @Test fun stageFailurePreservesBoundedCauseAndRoundTripsForLocalization() {
+        val failure = RuntimeText.stageFailure(RuntimeMessage.STAGE_OCR,
+            java.io.IOException("OCR failed", IllegalStateException("Component missing\\n" + "x".repeat(500))))
+        assertEquals(failure, RuntimeText.decode(failure.encode()))
+        assertEquals(runtimeText(RuntimeMessage.STAGE_OCR).encode(), failure.arguments[0])
+        val detail = failure.arguments[1] as String
+        assertEquals(240, detail.length)
+        assertFalse(detail.contains('\n'))
+        org.junit.Assert.assertTrue(detail.startsWith("IllegalStateException: Component missing"))
+    }
+
     @Test fun progressArgumentsSurviveStorageWithoutTranslatedProse() {
         val name = "海边: Sunset\n2026.mp4"
         val stored = runtimeText(RuntimeMessage.INDEX_FRAME, name, 45L).encode()

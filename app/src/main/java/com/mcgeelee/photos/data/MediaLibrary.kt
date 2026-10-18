@@ -200,7 +200,8 @@ class MediaLibrary(context: Context) {
             for (timestamp in timestampsMs) {
                 currentCoroutineContext().ensureActive()
                 require(timestamp >= 0)
-                val bitmap = decodeFrame(retriever, timestamp, maxDimension) ?: continue
+                val bitmap = decodeFrame(retriever, timestamp, maxDimension)
+                    ?: throw IOException(runtimeText(RuntimeMessage.VIDEO_UNREADABLE).encode())
                 decodedFrames++
                 try { onFrame(VideoFrame(timestamp, bitmap)) } finally { bitmap.recycle() }
             }

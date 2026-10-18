@@ -12,6 +12,12 @@ data class SearchHit(val asset: MediaAsset, val segment: IndexedSegment?, val sc
 
 /** Exact strings rescue invoice numbers and OCR; semantic matches retain their own timecode. */
 object HybridSearch {
+    const val DEFAULT_THRESHOLD = 0.45f
+
+    /** Similarity is not a probability. Invalid saved/input values fall back to a usable default. */
+    fun normalizeThreshold(value: Float): Float =
+        if (value.isFinite()) value.coerceIn(0f, 1f) else DEFAULT_THRESHOLD
+
     fun search(
         query: String,
         queryVector: FloatArray?,
@@ -20,9 +26,11 @@ object HybridSearch {
         scope: SearchScope = SearchScope.ALL,
         modelId: String,
         limit: Int = 100,
+        semanticThreshold: Float = DEFAULT_THRESHOLD,
     ): List<SearchHit> {
         val text = normalize(query)
         if (text.isEmpty() && queryVector == null) return emptyList()
+        val threshold = normalizeThreshold(semanticThreshold)
         val byUri = assets.filter {
             when (scope) { SearchScope.IMAGE -> !it.isVideo; SearchScope.VIDEO -> it.isVideo; else -> true }
         }.associateBy(MediaAsset::uri)
@@ -45,7 +53,7 @@ object HybridSearch {
                 cosine(queryVector, segment.vector)
             } else null
             // Raw cosine is an ordering signal, never a claimed confidence percentage.
-            if (words > 0f || (semantic != null && semantic >= 0.25f)) {
+            if (words > 0f || (semantic != null && semantic >= threshold)) {
                 offer(SearchHit(asset, segment, words + (semantic?.coerceAtLeast(0f) ?: 0f), words > 0f))
             }
         }

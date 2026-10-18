@@ -46,6 +46,8 @@ data class IndexedSegment(
     val text: String = "",
     val vector: FloatArray? = null,
     val modelId: String = "",
+    /** Completed OCR scripts, including successful reads that found no text. */
+    @ColumnInfo(defaultValue = "0") val ocrScripts: Int = 0,
 )
 
 @Entity(
@@ -67,6 +69,10 @@ data class IndexRecord(
     val modelId: String = "",
     /** Historical indexes ran video OCR; new work records the setting captured when it starts. */
     @ColumnInfo(defaultValue = "1") val videoOcrEnabled: Boolean = true,
+    /** A successful pass includes silence and media without an audio track. */
+    @ColumnInfo(defaultValue = "0") val audioComplete: Boolean = false,
+    /** Start of the last contiguous completed window; replay it to preserve overlap on resume. */
+    @ColumnInfo(defaultValue = "0") val audioResumeMs: Long = 0,
 )
 
 enum class MediaAccess { NONE, LIMITED, FULL }

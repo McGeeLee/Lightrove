@@ -1,0 +1,264 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "ada8b3ab0e2ed564173bdf3c07f92fd2",
+    "entities": [
+      {
+        "tableName": "media_assets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `id` INTEGER NOT NULL, `name` TEXT NOT NULL, `mimeType` TEXT NOT NULL, `dateModified` INTEGER NOT NULL, `dateTaken` INTEGER NOT NULL, `durationMs` INTEGER NOT NULL, `width` INTEGER NOT NULL, `height` INTEGER NOT NULL, `bucketName` TEXT NOT NULL, `isVideo` INTEGER NOT NULL, `ocrText` TEXT NOT NULL, `sizeBytes` INTEGER NOT NULL, PRIMARY KEY(`uri`))",
+        "fields": [
+          {
+            "fieldPath": "uri",
+            "columnName": "uri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mimeType",
+            "columnName": "mimeType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateModified",
+            "columnName": "dateModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateTaken",
+            "columnName": "dateTaken",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "durationMs",
+            "columnName": "durationMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "width",
+            "columnName": "width",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "height",
+            "columnName": "height",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bucketName",
+            "columnName": "bucketName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isVideo",
+            "columnName": "isVideo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ocrText",
+            "columnName": "ocrText",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sizeBytes",
+            "columnName": "sizeBytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "uri"
+          ]
+        }
+      },
+      {
+        "tableName": "indexed_segments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetUri` TEXT NOT NULL, `modality` TEXT NOT NULL, `timestampMs` INTEGER NOT NULL, `text` TEXT NOT NULL, `vector` BLOB, `modelId` TEXT NOT NULL, `ocrScripts` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`assetUri`, `modality`, `timestampMs`), FOREIGN KEY(`assetUri`) REFERENCES `media_assets`(`uri`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "assetUri",
+            "columnName": "assetUri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modality",
+            "columnName": "modality",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestampMs",
+            "columnName": "timestampMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "text",
+            "columnName": "text",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vector",
+            "columnName": "vector",
+            "affinity": "BLOB"
+          },
+          {
+            "fieldPath": "modelId",
+            "columnName": "modelId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ocrScripts",
+            "columnName": "ocrScripts",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "assetUri",
+            "modality",
+            "timestampMs"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_indexed_segments_assetUri",
+            "unique": false,
+            "columnNames": [
+              "assetUri"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_indexed_segments_assetUri` ON `${TABLE_NAME}` (`assetUri`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "media_assets",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "assetUri"
+            ],
+            "referencedColumns": [
+              "uri"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "index_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetUri` TEXT NOT NULL, `state` TEXT NOT NULL, `sourceModified` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `error` TEXT, `modelId` TEXT NOT NULL, `videoOcrEnabled` INTEGER NOT NULL DEFAULT 1, `audioComplete` INTEGER NOT NULL DEFAULT 0, `audioResumeMs` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`assetUri`), FOREIGN KEY(`assetUri`) REFERENCES `media_assets`(`uri`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "assetUri",
+            "columnName": "assetUri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceModified",
+            "columnName": "sourceModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "error",
+            "columnName": "error",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "modelId",
+            "columnName": "modelId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "videoOcrEnabled",
+            "columnName": "videoOcrEnabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          },
+          {
+            "fieldPath": "audioComplete",
+            "columnName": "audioComplete",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "audioResumeMs",
+            "columnName": "audioResumeMs",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "assetUri"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "media_assets",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "assetUri"
+            ],
+            "referencedColumns": [
+              "uri"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ada8b3ab0e2ed564173bdf3c07f92fd2')"
+    ]
+  }
+}

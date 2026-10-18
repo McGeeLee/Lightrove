@@ -91,4 +91,7 @@
     <plurals name="ui_item_count">
         <item quantity="other">%1$d 項</item>
     </plurals>
+    <string name="ui_search_threshold_title">相關性門檻</string>
+    <string name="ui_search_threshold_hint">提高門檻可減少模糊比對。</string>
+    <string name="ui_search_threshold_save_failed">無法儲存搜尋門檻。</string>
 </resources>
